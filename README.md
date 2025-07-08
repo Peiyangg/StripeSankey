@@ -1,10 +1,16 @@
 # Stripe Sankey Widget
 
-An interactive Sankey diagram widget for analyzing topic modeling flows and sample trajectories across different K values in Jupyter notebooks.
+An interactive Sankey diagram widget for understanding how samples are represented by topics across different LDA models. This tool can also be applied to similar algorithms like NMF and LSA.
 
-## Features
+LDA is a powerful tool for achieving soft clustering and finding latent groups beyond initial hypotheses. However, the challenge of applying LDA to 16S rRNA data is that sequence reads are less informative than human language when users want to evaluate a model's results. Even when metrics are applied, making decisions remains difficult.
 
-✨ **Interactive Sample Tracing** - Click flows to trace individual samples across topic assignments  
+We designed this StripeSankey diagram to make LDA results more accessible and integrated two widely used metrics—perplexity and coherence score—into novel visual encodings.
+
+Overview of StripeSankey diagram:
+<img src="fig/StrpeSankey_metic.jeg" alt="Description" width="600">
+
+After click one flow:
+<img src="fig/StrpeSankey_click.jeg" alt="Description" width="600">
 
 
 ## Installation
@@ -13,13 +19,7 @@ An interactive Sankey diagram widget for analyzing topic modeling flows and samp
 ```bash
 pip install StripeSankey
 ```
-
-### From Source
-```bash
-git clone https://github.com/Peiyangg/StripeSankey.git
-cd StripeSankey
-pip install -e .
-```
+## Data Preprocessing
 
 ## Quick Start
 
@@ -163,47 +163,17 @@ widget.color_schemes = {
 ## Use Cases
 
 - **Topic Model Analysis**: Understand how topics evolve across different K values
-- **Sample Trajectory Tracking**: Follow individual documents through topic assignments
+- **Sample Trajectory Tracking**: Follow samples through topic assignments
 - **Model Quality Assessment**: Visual comparison of perplexity and coherence metrics
 - **Flow Bottleneck Detection**: Identify where samples cluster or disperse
 - **Research Presentation**: Interactive demonstrations of topic modeling results
 
-## Requirements
-
-- Python 3.8+
-- anywidget ≥ 0.9.0
-- traitlets ≥ 5.0.0
-- Jupyter Lab/Notebook environment
-
-## Browser Support
-
-Works in modern browsers supporting ES6 modules:
-- Chrome/Chromium 61+
-- Firefox 60+
-- Safari 11+
-- Edge 16+
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-```bash
-git clone https://github.com/Peiyangg/StripeSankey.git
-cd StripeSankey
-pip install -e ".[dev]"
-```
-
-### Running Tests
-```bash
-pytest tests/
-```
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Citation
+<!-- ## Citation
 
 If you use this widget in your research, please cite:
 
@@ -214,7 +184,7 @@ If you use this widget in your research, please cite:
   url = {https://github.com/Peiyangg/StripeSankey},
   year = {2024}
 }
-```
+``` -->
 
 ## Acknowledgments
 
