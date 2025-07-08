@@ -7,13 +7,13 @@ LDA is a powerful tool for achieving soft clustering and finding latent groups b
 We designed this StripeSankey diagram to make LDA results more accessible and integrated two widely used metrics—perplexity and coherence score—into novel visual encodings.
 
 Overview of StripeSankey diagram:
-<img src="fig/StrpeSankey_metic.jpeg" alt="Description" width="600">
+<img src="fig/StripeSankey_metic.jpeg" alt="Description" width="600">
 
 Legend of metrics coour: 
-<img src="fig/legend.png" alt="Description" width="600">
+<img src="fig/legend.png" alt="Description" width="200">
 
 After click one flow:
-<img src="fig/StrpeSankey_click.jpg" alt="Description" width="600">
+<img src="fig/StripeSankey_click.jpg" alt="Description" width="600">
 
 
 
