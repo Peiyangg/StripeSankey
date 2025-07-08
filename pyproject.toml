@@ -1,0 +1,96 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "StripeSankey"
+version = "0.1.0"
+description = "Interactive Sankey diagram widget for topic modeling analysis with sample flow tracing"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Peiyang Huo", email = "peiyang.huo@kuleuven.be"}
+]
+maintainers = [
+    {name = "Peiyang Huo", email = "peiyang.huo@kuleuven.be"}
+]
+keywords = [
+    "jupyter",
+    "widget",
+    "sankey",
+    "topic-modeling",
+    "microbiome"
+    "visualization",
+    "anywidget",
+    "interactive"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Jupyter",
+    "Framework :: Jupyter :: JupyterLab",
+    "Framework :: Jupyter :: JupyterLab :: 3",
+    "Framework :: Jupyter :: JupyterLab :: 4",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    "anywidget>=0.9.0",
+    "traitlets>=5.0.0",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/Peiyangg/StripeSankey"
+Documentation = "https://github.com/Peiyangg/StripeSankey#readme"
+Repository = "https://github.com/Peiyangg/StripeSankey.git"
+"Bug Tracker" = "https://github.com/Peiyangg/StripeSankey/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "ruff",
+    "mypy",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+
+[tool.hatch.version]
+path = "StripeSankey/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["StripeSankey"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
