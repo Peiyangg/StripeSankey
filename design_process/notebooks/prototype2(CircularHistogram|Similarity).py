@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.14.10"
-app = marimo.App(width="medium")
+app = marimo.App(width="full")
 
 
 @app.cell
@@ -24,7 +24,7 @@ def _():
     return Dict, List, Optional, Tuple, cosine_similarity, go, mo, pd, px
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     import datetime
     import subprocess
@@ -61,12 +61,6 @@ def _(mo):
         subprocess.run(["git", "commit", "-m", msg], check=True)
 
         return str(final_path)
-    return (save_svg_and_commit,)
-
-
-@app.cell
-def _(mo, save_svg_and_commit, svgstring):
-    mo.ui.button(label="Save & commit SVG", on_click=lambda _: save_svg_and_commit(svgstring))
     return
 
 
@@ -904,32 +898,18 @@ def _(
     return (results_topic_similarity,)
 
 
-@app.cell(hide_code=True)
-def _(run_topic_evolution_analysis_similarity_flow):
+@app.cell
+def _():
     import anywidget
     import traitlets
-    import time
+    return anywidget, traitlets
 
+
+@app.cell(hide_code=True)
+def _(anywidget, traitlets):
     class SimilaritySankeyWidget(anywidget.AnyWidget):
         _esm = '''
         import * as d3 from "https://cdn.skypack.dev/d3@7";
-
-        function getSvgString(svgEl) {
-            // Clone the SVG element to avoid modifying the original
-            const svgClone = svgEl.cloneNode(true);
-        
-            // Set the necessary XML namespace
-            svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-        
-            // Get the SVG data as string
-            const svgData = svgClone.outerHTML;
-        
-            // Add XML declaration
-            const preface = '<?xml version="1.0" standalone="no"?>\\r\\n';
-        
-            // Return the complete SVG string
-            return preface + svgData;
-        }
 
         function render({ model, el }) {
             el.innerHTML = '';
@@ -955,18 +935,6 @@ def _(run_topic_evolution_analysis_similarity_flow):
                 .style("background", "#fafafa")
                 .style("border", "1px solid #ddd");
 
-            // Store SVG reference for export
-            model.svgElement = svg.node();
-
-            // Handle messages from Python
-            model.on("msg:custom", (msg) => {
-                if (msg.action === "export_svg" && model.svgElement) {
-                    const svgString = getSvgString(model.svgElement);
-                    model.set("exported_svg", svgString);
-                    model.save_changes();
-                }
-            });
-
             const margin = { top: 60, right: 150, bottom: 60, left: 100 };
             const chartWidth = width - margin.left - margin.right;
             const chartHeight = height - margin.top - margin.bottom;
@@ -980,9 +948,6 @@ def _(run_topic_evolution_analysis_similarity_flow):
             // Draw the similarity-based sankey diagram
             drawSimilaritySankeyDiagram(g, processedData, chartWidth, chartHeight, colorSchemes, selectedFlow, model, showSimilarityMetrics, minSimilarity);
 
-            // Add export button
-            addExportButton(g, chartWidth, model);
-
             // Update handlers
             model.on("change:sankey_data", () => {
                 const newData = model.get("sankey_data");
@@ -991,9 +956,7 @@ def _(run_topic_evolution_analysis_similarity_flow):
                     svg.selectAll("*").remove();
                     const newG = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
                     drawSimilaritySankeyDiagram(newG, newProcessedData, chartWidth, chartHeight, colorSchemes, model.get("selected_flow"), model, model.get("show_similarity_metrics"), model.get("min_similarity"));
-                    addExportButton(newG, chartWidth, model);
                 }
-                model.svgElement = svg.node();
             });
 
             model.on("change:selected_flow", () => {
@@ -1001,8 +964,6 @@ def _(run_topic_evolution_analysis_similarity_flow):
                 svg.selectAll("*").remove();
                 const newG = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
                 drawSimilaritySankeyDiagram(newG, processedData, chartWidth, chartHeight, colorSchemes, newSelectedFlow, model, model.get("show_similarity_metrics"), model.get("min_similarity"));
-                addExportButton(newG, chartWidth, model);
-                model.svgElement = svg.node();
             });
 
             model.on("change:min_similarity", () => {
@@ -1011,52 +972,7 @@ def _(run_topic_evolution_analysis_similarity_flow):
                 svg.selectAll("*").remove();
                 const newG = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
                 drawSimilaritySankeyDiagram(newG, newProcessedData, chartWidth, chartHeight, colorSchemes, model.get("selected_flow"), model, model.get("show_similarity_metrics"), newMinSimilarity);
-                addExportButton(newG, chartWidth, model);
-                model.svgElement = svg.node();
             });
-
-            // Auto-export SVG on initial render if requested
-            setTimeout(() => {
-                if (model.get("auto_export_svg") && model.svgElement) {
-                    const svgString = getSvgString(model.svgElement);
-                    model.set("exported_svg", svgString);
-                    model.save_changes();
-                }
-            }, 100);
-        }
-
-        function addExportButton(g, chartWidth, model) {
-            const exportButton = g.append("g")
-                .attr("class", "export-button")
-                .attr("transform", `translate(${chartWidth - 100}, -40)`)
-                .style("cursor", "pointer")
-                .on("click", function() {
-                    if (model.svgElement) {
-                        const svgString = getSvgString(model.svgElement);
-                        model.set("exported_svg", svgString);
-                        model.save_changes();
-                    
-                        // Visual feedback
-                        d3.select(this).select("rect").attr("fill", "#2E7D32");
-                        setTimeout(() => {
-                            d3.select(this).select("rect").attr("fill", "#4CAF50");
-                        }, 200);
-                    }
-                });
-
-            exportButton.append("rect")
-                .attr("width", 80)
-                .attr("height", 25)
-                .attr("fill", "#4CAF50")
-                .attr("rx", 3);
-
-            exportButton.append("text")
-                .attr("x", 40)
-                .attr("y", 16)
-                .attr("text-anchor", "middle")
-                .style("font-size", "12px")
-                .style("fill", "white")
-                .text("Export SVG");
         }
 
         function processDataForVisualization(data, minSimilarity) {
@@ -1584,18 +1500,15 @@ def _(run_topic_evolution_analysis_similarity_flow):
         selected_flow = traitlets.Dict(default_value={}).tag(sync=True)
         min_similarity = traitlets.Float(default_value=0.3).tag(sync=True)
         show_similarity_metrics = traitlets.Bool(default_value=True).tag(sync=True)
-        exported_svg = traitlets.Unicode(default_value="").tag(sync=True)
-        auto_export_svg = traitlets.Bool(default_value=False).tag(sync=True)
 
         color_schemes = traitlets.Dict(default_value={
             2: "#1f77b4", 3: "#ff7f0e", 4: "#2ca02c", 5: "#d62728", 6: "#9467bd",
             7: "#8c564b", 8: "#e377c2", 9: "#7f7f7f", 10: "#bcbd22"
         }).tag(sync=True)
 
-        def __init__(self, similarity_results=None, min_similarity=0.3, auto_export_svg=False, **kwargs):
+        def __init__(self, similarity_results=None, min_similarity=0.3, **kwargs):
             super().__init__(**kwargs)
             self.min_similarity = min_similarity
-            self.auto_export_svg = auto_export_svg
             if similarity_results:
                 self.set_similarity_data(similarity_results)
 
@@ -1648,16 +1561,6 @@ def _(run_topic_evolution_analysis_similarity_flow):
             self.sankey_data = widget_data
             return self
 
-        def export_svg(self):
-            """Export the current SVG as a string"""
-            # Trigger the SVG export in JavaScript
-            self.send({"action": "export_svg"})
-        
-            # Wait a bit for the export to complete
-            time.sleep(0.2)
-        
-            return self.exported_svg
-
         def set_similarity_threshold(self, threshold):
             """Update the minimum similarity threshold for filtering flows"""
             self.min_similarity = threshold
@@ -1669,45 +1572,37 @@ def _(run_topic_evolution_analysis_similarity_flow):
             """Toggle display of similarity metrics"""
             self.show_similarity_metrics = show
             return self
+    return (SimilaritySankeyWidget,)
 
+
+@app.cell
+def _(SimilaritySankeyWidget, run_topic_evolution_analysis_similarity_flow):
 
     def create_similarity_sankey_widget(
         similarity_results, 
         min_similarity=0.3, 
         width=1200, 
-        height=800,
-        export_svg=False
+        height=800
     ):
         """
         Create a similarity-based Sankey widget from analysis results.
+
         Args:
             similarity_results: Output from run_topic_evolution_analysis_similarity_flow()
             min_similarity: Minimum similarity threshold to display flows
             width: Widget width in pixels
             height: Widget height in pixels
-            export_svg: If True, also return SVG string
+
         Returns:
-            If export_svg=False: SimilaritySankeyWidget instance
-            If export_svg=True: tuple of (svg_string, SimilaritySankeyWidget instance)
+            SimilaritySankeyWidget instance
         """
         widget = SimilaritySankeyWidget(
             similarity_results=similarity_results,
             min_similarity=min_similarity,
             width=width,
-            height=height,
-            auto_export_svg=export_svg
+            height=height
         )
-    
-        if export_svg:
-            # Give the widget time to render
-            time.sleep(1.0)
-        
-            # Export SVG
-            svg_string = widget.export_svg()
-        
-            return svg_string, widget
-        else:
-            return widget
+        return widget
 
 
     def create_similarity_analysis_and_widget(
@@ -1718,11 +1613,11 @@ def _(run_topic_evolution_analysis_similarity_flow):
         similarity_threshold=0.3,
         use_normalized_flow=True,
         widget_width=1200,
-        widget_height=800,
-        export_svg=False
+        widget_height=800
     ):
         """
         Complete pipeline: run similarity analysis and create interactive widget.
+
         Args:
             selected_global_ids: List of global_ids from cluster selection
             topic_word_folder: Path to topic-word probability files
@@ -1732,10 +1627,9 @@ def _(run_topic_evolution_analysis_similarity_flow):
             use_normalized_flow: Whether to normalize similarity scores for flow
             widget_width: Widget width in pixels
             widget_height: Widget height in pixels
-            export_svg: If True, also return SVG string
+
         Returns:
             Dictionary with 'results' and 'widget' keys
-            If export_svg=True, also includes 'svg_string' key
         """
         # Run the similarity-based analysis
         print("=== Running Similarity-Based Topic Evolution Analysis ===")
@@ -1747,49 +1641,27 @@ def _(run_topic_evolution_analysis_similarity_flow):
             similarity_threshold=similarity_threshold,
             use_normalized_flow=use_normalized_flow
         )
+
         print("\n=== Creating Interactive Similarity Widget ===")
-    
         # Create the interactive widget
-        if export_svg:
-            svg_string, widget = create_similarity_sankey_widget(
-                similarity_results=results,
-                min_similarity=similarity_threshold,
-                width=widget_width,
-                height=widget_height,
-                export_svg=True
-            )
-        
-            print(f"✓ Widget created with {len(results['similarity_df'])} flows")
-            print(f"✓ SVG exported successfully")
-            print(f"✓ Flow thickness now represents similarity strength")
-            print(f"✓ Minimum similarity threshold: {similarity_threshold}")
-            print(f"✓ Radial histograms show probability distributions")
-            print(f"✓ Each slice represents 0.1 probability bin (0.0-0.1, 0.1-0.2, etc.)")
-        
-            return {
-                'results': results,
-                'widget': widget,
-                'svg_string': svg_string
-            }
-        else:
-            widget = create_similarity_sankey_widget(
-                similarity_results=results,
-                min_similarity=similarity_threshold,
-                width=widget_width,
-                height=widget_height
-            )
-        
-            print(f"✓ Widget created with {len(results['similarity_df'])} flows")
-            print(f"✓ Flow thickness now represents similarity strength")
-            print(f"✓ Minimum similarity threshold: {similarity_threshold}")
-            print(f"✓ Radial histograms show probability distributions")
-            print(f"✓ Each slice represents 0.1 probability bin (0.0-0.1, 0.1-0.2, etc.)")
-        
-            return {
-                'results': results,
-                'widget': widget
-            }
-    return SimilaritySankeyWidget, time
+        widget = create_similarity_sankey_widget(
+            similarity_results=results,
+            min_similarity=similarity_threshold,
+            width=widget_width,
+            height=widget_height
+        )
+
+        print(f"✓ Widget created with {len(results['similarity_df'])} flows")
+        print(f"✓ Flow thickness now represents similarity strength")
+        print(f"✓ Minimum similarity threshold: {similarity_threshold}")
+        print(f"✓ Radial histograms show probability distributions")
+        print(f"✓ Each slice represents 0.1 probability bin (0.0-0.1, 0.1-0.2, etc.)")
+
+        return {
+            'results': results,
+            'widget': widget
+        }
+    return (create_similarity_sankey_widget,)
 
 
 @app.cell
@@ -1800,51 +1672,36 @@ def _(mo):
 
 @app.cell
 def _(
-    SimilaritySankeyWidget,
+    create_similarity_sankey_widget,
     results_topic_similarity,
     similarity_slider,
-    time,
 ):
-    # Simple and reliable approach:
-
-    def create_similarity_sankey_widget_simple(
-        similarity_results, 
-        min_similarity=0.3, 
-        width=1200, 
-        height=800,
-        return_svg=False
-    ):
-        """Simplified version that always works"""
-        widget = SimilaritySankeyWidget(
-            similarity_results=similarity_results,
-            min_similarity=min_similarity,
-            width=width,
-            height=height
-        )
-    
-        if return_svg:
-            return widget, True  # Return widget and a flag to export later
-        else:
-            return widget
-
-    # Usage:
-    widget_radio, should_export = create_similarity_sankey_widget_simple(
+    widget_radio = create_similarity_sankey_widget(
         similarity_results=results_topic_similarity,
         min_similarity=similarity_slider.value,
         width=1200,
-        height=800,
-        return_svg=True
-    )
-    widget_radio
-    time.sleep(3)  # Give it time to fully render
-
-    # Manual export by clicking the export button or using JavaScript directly
-    print("Please click the 'Export SVG' button in the widget to get the SVG string.")
-    print("The SVG will be available in widget_radio.exported_svg after clicking.")
-
-    # Or you can try:
-    #  # Check this after clicking the button
+        height=800)
     return (widget_radio,)
+
+
+@app.cell
+def _(widget_radio):
+    widget_radio
+    return
+
+
+@app.cell
+def _():
+    # widget_radio, should_export = create_similarity_sankey_widget_simple(
+    #     similarity_results=results_topic_similarity,
+    #     min_similarity=similarity_slider.value,
+    #     width=1200,
+    #     height=800,
+    #     return_svg=True
+    # )
+
+    # widget_radio
+    return
 
 
 @app.cell
@@ -1856,232 +1713,6 @@ def _(mo):
 @app.cell
 def _(mo, similarity_slider):
     mo.hstack([similarity_slider, mo.md(f"Has value: {similarity_slider.value}")])
-    return
-
-
-@app.cell
-def _(widget_radio):
-    widget_radio
-    return
-
-
-@app.cell
-def _(widget_radio):
-    svgstring = widget_radio.exported_svg
-    return (svgstring,)
-
-
-@app.function(hide_code=True)
-def export_widget_svg(widget, filename="similarity_sankey.svg"):
-    """
-    Export your widget_radio as SVG
-    """
-    # Get the current widget state
-    nodes = widget.sankey_data.get('nodes', [])
-    links = widget.sankey_data.get('links', [])
-    k_values = widget.sankey_data.get('k_values', [])
-
-    width = widget.width
-    height = widget.height
-    min_similarity = widget.min_similarity
-
-    # Filter links by similarity threshold
-    significant_links = [link for link in links if link.get('similarity', 0) >= min_similarity]
-
-    # Create SVG content
-    svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
-<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" 
-     xmlns="http://www.w3.org/2000/svg">
-
-    <title>Similarity Sankey Diagram</title>
-
-    <!-- Background -->
-    <rect width="100%" height="100%" fill="#fafafa" stroke="#ddd" stroke-width="1"/>
-
-    <!-- Styles -->
-    <style>
-        <![CDATA[
-        .flow-path {{ 
-            stroke-linecap: round; 
-            fill: none; 
-            opacity: 0.7;
-        }}
-        .node-circle {{ 
-            stroke: white; 
-            stroke-width: 2; 
-        }}
-        .node-label {{ 
-            font-family: Arial, sans-serif; 
-            font-size: 9px; 
-            font-weight: bold; 
-            fill: #333;
-        }}
-        .k-label {{ 
-            font-family: Arial, sans-serif; 
-            font-size: 16px; 
-            font-weight: bold;
-        }}
-        .legend-text {{ 
-            font-family: Arial, sans-serif; 
-            font-size: 10px; 
-            fill: #666;
-        }}
-        .legend-title {{ 
-            font-family: Arial, sans-serif; 
-            font-size: 12px; 
-            font-weight: bold; 
-            fill: #333;
-        }}
-        ]]>
-    </style>
-
-    <!-- Main visualization group -->
-    <g transform="translate(100, 60)">
-'''
-
-    # Calculate positions
-    chart_width = width - 200  # margin left + right
-    chart_height = height - 120  # margin top + bottom
-
-    if len(k_values) > 1:
-        k_spacing = chart_width / (len(k_values) - 1)
-    else:
-        k_spacing = chart_width / 2
-
-    # Group nodes by k value
-    nodes_by_k = {}
-    for node in nodes:
-        k = node['k_value']
-        if k not in nodes_by_k:
-            nodes_by_k[k] = []
-        nodes_by_k[k].append(node)
-
-    # Position nodes
-    node_positions = {}
-    for i, k in enumerate(k_values):
-        k_nodes = nodes_by_k.get(k, [])
-        if k_nodes:
-            spacing = chart_height / (len(k_nodes) + 1)
-            for j, node in enumerate(k_nodes):
-                x = i * k_spacing
-                y = (j + 1) * spacing
-                node_positions[node['global_id']] = (x, y)
-
-    # Draw flows/links
-    max_similarity = max([link.get('similarity', 0) for link in significant_links]) if significant_links else 1
-    min_flow_width = 2
-    max_flow_width = 25
-
-    svg_content += '        <!-- Flows -->\n        <g class="flows">\n'
-
-    for link in significant_links:
-        source_id = link['source_topic']
-        target_id = link['target_topic']
-        similarity = link.get('similarity', 0)
-
-        if source_id in node_positions and target_id in node_positions:
-            x1, y1 = node_positions[source_id]
-            x2, y2 = node_positions[target_id]
-
-            # Calculate flow width based on similarity
-            flow_width = min_flow_width + (similarity / max_similarity) * (max_flow_width - min_flow_width)
-
-            # Create curved path
-            mid_x = (x1 + x2) / 2
-            path_d = f"M {x1 + 15} {y1} C {mid_x} {y1} {mid_x} {y2} {x2 - 15} {y2}"
-
-            svg_content += f'''            <path d="{path_d}" 
-                  class="flow-path" 
-                  stroke="#888" 
-                  stroke-width="{flow_width:.1f}"
-                  data-similarity="{similarity:.3f}"
-                  data-source="{source_id}"
-                  data-target="{target_id}">
-                <title>Similarity: {similarity:.3f} | {source_id} → {target_id}</title>
-            </path>
-'''
-
-    svg_content += '        </g>\n'
-
-    # Draw nodes
-    svg_content += '        <!-- Nodes -->\n        <g class="nodes">\n'
-
-    color_schemes = widget.color_schemes
-
-    for node in nodes:
-        node_id = node['global_id']
-        if node_id in node_positions:
-            x, y = node_positions[node_id]
-            k = node['k_value']
-            topic_idx = node['topic_idx']
-            color = color_schemes.get(k, '#666')
-            top_words = node.get('top_words', 'Unknown')
-
-            # Draw node as circle (simplified from radial histogram)
-            radius = 12
-            svg_content += f'''            <g transform="translate({x}, {y})">
-                <circle r="{radius}" 
-                        class="node-circle" 
-                        fill="{color}" 
-                        data-node-id="{node_id}"
-                        data-topic-idx="{topic_idx}"
-                        data-k="{k}">
-                    <title>Topic {topic_idx} (K={k}) | {top_words}</title>
-                </circle>
-                <text x="{radius + 8}" y="0" dy="0.35em" class="node-label">
-                    T{topic_idx}
-                </text>
-            </g>
-'''
-
-    svg_content += '        </g>\n'
-
-    # Add K value labels
-    svg_content += '        <!-- K Value Labels -->\n'
-    for i, k in enumerate(k_values):
-        x = i * k_spacing
-        color = color_schemes.get(k, '#333')
-        svg_content += f'''        <text x="{x}" y="-30" text-anchor="middle" class="k-label" fill="{color}">
-            K={k}
-        </text>
-'''
-
-    # Add legend
-    legend_y = chart_height - 80
-    svg_content += f'''        <!-- Legend -->
-        <g transform="translate(20, {legend_y})">
-            <text x="0" y="8" class="legend-title">Similarity Sankey Diagram</text>
-            <text x="0" y="24" class="legend-text">Min Similarity: {min_similarity:.2f}</text>
-            <text x="0" y="36" class="legend-text">Flows: {len(significant_links)} shown</text>
-            <text x="0" y="48" class="legend-text">Nodes: {len(nodes)} topics</text>
-            <text x="0" y="60" class="legend-text">Flow thickness ∝ similarity strength</text>
-            <text x="0" y="72" class="legend-text">Hover elements for details</text>
-        </g>
-'''
-
-    # Close the main group and SVG
-    svg_content += '''    </g>
-</svg>'''
-
-    # Save to file
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(svg_content)
-
-    print(f"✓ SVG exported to {filename}")
-    print(f"  - Dimensions: {width}×{height}")
-    print(f"  - Nodes: {len(nodes)}")
-    print(f"  - Flows shown: {len(significant_links)} (similarity ≥ {min_similarity:.2f})")
-
-    return svg_content
-
-
-@app.cell
-def _(widget_radio):
-    # # Use it with your existing widget:
-    # svg_string = export_widget_svg(widget_radio, "my_similarity_sankey.svg")
-
-    # Or get just the SVG string without saving:
-    svg_string = export_widget_svg(widget_radio)  # Pass None to skip file saving
     return
 
 
