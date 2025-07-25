@@ -1,0 +1,1281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" viewBox="0 0 1200 800" 
+     xmlns="http://www.w3.org/2000/svg">
+
+    <title>Similarity Sankey Diagram</title>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#fafafa" stroke="#ddd" stroke-width="1"/>
+
+    <!-- Styles -->
+    <style>
+        <![CDATA[
+        .flow-path { 
+            stroke-linecap: round; 
+            fill: none; 
+            opacity: 0.7;
+        }
+        .node-circle { 
+            stroke: white; 
+            stroke-width: 2; 
+        }
+        .node-label { 
+            font-family: Arial, sans-serif; 
+            font-size: 9px; 
+            font-weight: bold; 
+            fill: #333;
+        }
+        .k-label { 
+            font-family: Arial, sans-serif; 
+            font-size: 16px; 
+            font-weight: bold;
+        }
+        .legend-text { 
+            font-family: Arial, sans-serif; 
+            font-size: 10px; 
+            fill: #666;
+        }
+        .legend-title { 
+            font-family: Arial, sans-serif; 
+            font-size: 12px; 
+            font-weight: bold; 
+            fill: #333;
+        }
+        ]]>
+    </style>
+
+    <!-- Main visualization group -->
+    <g transform="translate(100, 60)">
+        <!-- Flows -->
+        <g class="flows">
+            <path d="M 15.0 226.66666666666666 C 62.5 226.66666666666666 62.5 170.0 110.0 170.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.5"
+                  data-similarity="0.931"
+                  data-source="k2_MC0"
+                  data-target="k3_MC0">
+                <title>Similarity: 0.931 | k2_MC0 → k3_MC0</title>
+            </path>
+            <path d="M 15.0 226.66666666666666 C 62.5 226.66666666666666 62.5 510.0 110.0 510.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="24.0"
+                  data-similarity="0.956"
+                  data-source="k2_MC0"
+                  data-target="k3_MC2">
+                <title>Similarity: 0.956 | k2_MC0 → k3_MC2</title>
+            </path>
+            <path d="M 15.0 453.3333333333333 C 62.5 453.3333333333333 62.5 170.0 110.0 170.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="19.2"
+                  data-similarity="0.745"
+                  data-source="k2_MC1"
+                  data-target="k3_MC0">
+                <title>Similarity: 0.745 | k2_MC1 → k3_MC0</title>
+            </path>
+            <path d="M 15.0 453.3333333333333 C 62.5 453.3333333333333 62.5 340.0 110.0 340.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.0"
+                  data-similarity="0.913"
+                  data-source="k2_MC1"
+                  data-target="k3_MC1">
+                <title>Similarity: 0.913 | k2_MC1 → k3_MC1</title>
+            </path>
+            <path d="M 15.0 453.3333333333333 C 62.5 453.3333333333333 62.5 510.0 110.0 510.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="20.2"
+                  data-similarity="0.791"
+                  data-source="k2_MC1"
+                  data-target="k3_MC2">
+                <title>Similarity: 0.791 | k2_MC1 → k3_MC2</title>
+            </path>
+            <path d="M 140.0 170.0 C 187.5 170.0 187.5 136.0 235.0 136.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.8"
+                  data-similarity="0.946"
+                  data-source="k3_MC0"
+                  data-target="k4_MC0">
+                <title>Similarity: 0.946 | k3_MC0 → k4_MC0</title>
+            </path>
+            <path d="M 140.0 170.0 C 187.5 170.0 187.5 272.0 235.0 272.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="20.1"
+                  data-similarity="0.786"
+                  data-source="k3_MC0"
+                  data-target="k4_MC1">
+                <title>Similarity: 0.786 | k3_MC0 → k4_MC1</title>
+            </path>
+            <path d="M 140.0 340.0 C 187.5 340.0 187.5 136.0 235.0 136.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.8"
+                  data-similarity="0.728"
+                  data-source="k3_MC1"
+                  data-target="k4_MC0">
+                <title>Similarity: 0.728 | k3_MC1 → k4_MC0</title>
+            </path>
+            <path d="M 140.0 340.0 C 187.5 340.0 187.5 272.0 235.0 272.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="19.3"
+                  data-similarity="0.751"
+                  data-source="k3_MC1"
+                  data-target="k4_MC1">
+                <title>Similarity: 0.751 | k3_MC1 → k4_MC1</title>
+            </path>
+            <path d="M 140.0 340.0 C 187.5 340.0 187.5 544.0 235.0 544.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="24.2"
+                  data-similarity="0.964"
+                  data-source="k3_MC1"
+                  data-target="k4_MC3">
+                <title>Similarity: 0.964 | k3_MC1 → k4_MC3</title>
+            </path>
+            <path d="M 140.0 510.0 C 187.5 510.0 187.5 136.0 235.0 136.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.5"
+                  data-similarity="0.717"
+                  data-source="k3_MC2"
+                  data-target="k4_MC0">
+                <title>Similarity: 0.717 | k3_MC2 → k4_MC0</title>
+            </path>
+            <path d="M 140.0 510.0 C 187.5 510.0 187.5 272.0 235.0 272.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="20.7"
+                  data-similarity="0.810"
+                  data-source="k3_MC2"
+                  data-target="k4_MC1">
+                <title>Similarity: 0.810 | k3_MC2 → k4_MC1</title>
+            </path>
+            <path d="M 140.0 510.0 C 187.5 510.0 187.5 408.0 235.0 408.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="21.3"
+                  data-similarity="0.835"
+                  data-source="k3_MC2"
+                  data-target="k4_MC2">
+                <title>Similarity: 0.835 | k3_MC2 → k4_MC2</title>
+            </path>
+            <path d="M 265.0 136.0 C 312.5 136.0 312.5 226.66666666666666 360.0 226.66666666666666" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="19.1"
+                  data-similarity="0.741"
+                  data-source="k4_MC0"
+                  data-target="k5_MC1">
+                <title>Similarity: 0.741 | k4_MC0 → k5_MC1</title>
+            </path>
+            <path d="M 265.0 136.0 C 312.5 136.0 312.5 340.0 360.0 340.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.9"
+                  data-similarity="0.733"
+                  data-source="k4_MC0"
+                  data-target="k5_MC2">
+                <title>Similarity: 0.733 | k4_MC0 → k5_MC2</title>
+            </path>
+            <path d="M 265.0 272.0 C 312.5 272.0 312.5 113.33333333333333 360.0 113.33333333333333" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="21.2"
+                  data-similarity="0.834"
+                  data-source="k4_MC1"
+                  data-target="k5_MC0">
+                <title>Similarity: 0.834 | k4_MC1 → k5_MC0</title>
+            </path>
+            <path d="M 265.0 272.0 C 312.5 272.0 312.5 340.0 360.0 340.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="21.4"
+                  data-similarity="0.843"
+                  data-source="k4_MC1"
+                  data-target="k5_MC2">
+                <title>Similarity: 0.843 | k4_MC1 → k5_MC2</title>
+            </path>
+            <path d="M 265.0 408.0 C 312.5 408.0 312.5 226.66666666666666 360.0 226.66666666666666" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="22.6"
+                  data-similarity="0.895"
+                  data-source="k4_MC2"
+                  data-target="k5_MC1">
+                <title>Similarity: 0.895 | k4_MC2 → k5_MC1</title>
+            </path>
+            <path d="M 265.0 544.0 C 312.5 544.0 312.5 340.0 360.0 340.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="22.7"
+                  data-similarity="0.900"
+                  data-source="k4_MC3"
+                  data-target="k5_MC2">
+                <title>Similarity: 0.900 | k4_MC3 → k5_MC2</title>
+            </path>
+            <path d="M 265.0 544.0 C 312.5 544.0 312.5 566.6666666666666 360.0 566.6666666666666" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="19.4"
+                  data-similarity="0.756"
+                  data-source="k4_MC3"
+                  data-target="k5_MC4">
+                <title>Similarity: 0.756 | k4_MC3 → k5_MC4</title>
+            </path>
+            <path d="M 390.0 113.33333333333333 C 437.5 113.33333333333333 437.5 291.42857142857144 485.0 291.42857142857144" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.4"
+                  data-similarity="0.713"
+                  data-source="k5_MC0"
+                  data-target="k6_MC2">
+                <title>Similarity: 0.713 | k5_MC0 → k6_MC2</title>
+            </path>
+            <path d="M 390.0 113.33333333333333 C 437.5 113.33333333333333 437.5 582.8571428571429 485.0 582.8571428571429" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.7"
+                  data-similarity="0.723"
+                  data-source="k5_MC0"
+                  data-target="k6_MC5">
+                <title>Similarity: 0.723 | k5_MC0 → k6_MC5</title>
+            </path>
+            <path d="M 390.0 226.66666666666666 C 437.5 226.66666666666666 437.5 291.42857142857144 485.0 291.42857142857144" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.3"
+                  data-similarity="0.923"
+                  data-source="k5_MC1"
+                  data-target="k6_MC2">
+                <title>Similarity: 0.923 | k5_MC1 → k6_MC2</title>
+            </path>
+            <path d="M 390.0 340.0 C 437.5 340.0 437.5 97.14285714285714 485.0 97.14285714285714" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.0"
+                  data-similarity="0.913"
+                  data-source="k5_MC2"
+                  data-target="k6_MC0">
+                <title>Similarity: 0.913 | k5_MC2 → k6_MC0</title>
+            </path>
+            <path d="M 515.0 97.14285714285714 C 562.5 97.14285714285714 562.5 85.0 610.0 85.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.9"
+                  data-similarity="0.951"
+                  data-source="k6_MC0"
+                  data-target="k7_MC0">
+                <title>Similarity: 0.951 | k6_MC0 → k7_MC0</title>
+            </path>
+            <path d="M 515.0 194.28571428571428 C 562.5 194.28571428571428 562.5 595.0 610.0 595.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="21.0"
+                  data-similarity="0.826"
+                  data-source="k6_MC1"
+                  data-target="k7_MC6">
+                <title>Similarity: 0.826 | k6_MC1 → k7_MC6</title>
+            </path>
+            <path d="M 515.0 291.42857142857144 C 562.5 291.42857142857144 562.5 510.0 610.0 510.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="20.5"
+                  data-similarity="0.803"
+                  data-source="k6_MC2"
+                  data-target="k7_MC5">
+                <title>Similarity: 0.803 | k6_MC2 → k7_MC5</title>
+            </path>
+            <path d="M 515.0 388.57142857142856 C 562.5 388.57142857142856 562.5 255.0 610.0 255.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.7"
+                  data-similarity="0.940"
+                  data-source="k6_MC3"
+                  data-target="k7_MC2">
+                <title>Similarity: 0.940 | k6_MC3 → k7_MC2</title>
+            </path>
+            <path d="M 515.0 582.8571428571429 C 562.5 582.8571428571429 562.5 425.0 610.0 425.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="24.5"
+                  data-similarity="0.977"
+                  data-source="k6_MC5"
+                  data-target="k7_MC4">
+                <title>Similarity: 0.977 | k6_MC5 → k7_MC4</title>
+            </path>
+            <path d="M 640.0 85.0 C 687.5 85.0 687.5 151.11111111111111 735.0 151.11111111111111" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.9"
+                  data-similarity="0.950"
+                  data-source="k7_MC0"
+                  data-target="k8_MC1">
+                <title>Similarity: 0.950 | k7_MC0 → k8_MC1</title>
+            </path>
+            <path d="M 640.0 85.0 C 687.5 85.0 687.5 226.66666666666669 735.0 226.66666666666669" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="20.0"
+                  data-similarity="0.781"
+                  data-source="k7_MC0"
+                  data-target="k8_MC2">
+                <title>Similarity: 0.781 | k7_MC0 → k8_MC2</title>
+            </path>
+            <path d="M 640.0 85.0 C 687.5 85.0 687.5 528.8888888888889 735.0 528.8888888888889" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="24.7"
+                  data-similarity="0.987"
+                  data-source="k7_MC0"
+                  data-target="k8_MC6">
+                <title>Similarity: 0.987 | k7_MC0 → k8_MC6</title>
+            </path>
+            <path d="M 640.0 170.0 C 687.5 170.0 687.5 604.4444444444445 735.0 604.4444444444445" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="21.1"
+                  data-similarity="0.828"
+                  data-source="k7_MC1"
+                  data-target="k8_MC7">
+                <title>Similarity: 0.828 | k7_MC1 → k8_MC7</title>
+            </path>
+            <path d="M 640.0 255.0 C 687.5 255.0 687.5 226.66666666666669 735.0 226.66666666666669" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.5"
+                  data-similarity="0.932"
+                  data-source="k7_MC2"
+                  data-target="k8_MC2">
+                <title>Similarity: 0.932 | k7_MC2 → k8_MC2</title>
+            </path>
+            <path d="M 640.0 510.0 C 687.5 510.0 687.5 75.55555555555556 735.0 75.55555555555556" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="22.7"
+                  data-similarity="0.897"
+                  data-source="k7_MC5"
+                  data-target="k8_MC0">
+                <title>Similarity: 0.897 | k7_MC5 → k8_MC0</title>
+            </path>
+            <path d="M 640.0 595.0 C 687.5 595.0 687.5 377.77777777777777 735.0 377.77777777777777" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="23.5"
+                  data-similarity="0.932"
+                  data-source="k7_MC6"
+                  data-target="k8_MC4">
+                <title>Similarity: 0.932 | k7_MC6 → k8_MC4</title>
+            </path>
+            <path d="M 765.0 75.55555555555556 C 812.5 75.55555555555556 812.5 612.0 860.0 612.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="21.7"
+                  data-similarity="0.856"
+                  data-source="k8_MC0"
+                  data-target="k9_MC8">
+                <title>Similarity: 0.856 | k8_MC0 → k9_MC8</title>
+            </path>
+            <path d="M 765.0 151.11111111111111 C 812.5 151.11111111111111 812.5 68.0 860.0 68.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="21.3"
+                  data-similarity="0.836"
+                  data-source="k8_MC1"
+                  data-target="k9_MC0">
+                <title>Similarity: 0.836 | k8_MC1 → k9_MC0</title>
+            </path>
+            <path d="M 765.0 226.66666666666669 C 812.5 226.66666666666669 812.5 272.0 860.0 272.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="22.9"
+                  data-similarity="0.905"
+                  data-source="k8_MC2"
+                  data-target="k9_MC3">
+                <title>Similarity: 0.905 | k8_MC2 → k9_MC3</title>
+            </path>
+            <path d="M 765.0 377.77777777777777 C 812.5 377.77777777777777 812.5 340.0 860.0 340.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="19.7"
+                  data-similarity="0.768"
+                  data-source="k8_MC4"
+                  data-target="k9_MC4">
+                <title>Similarity: 0.768 | k8_MC4 → k9_MC4</title>
+            </path>
+            <path d="M 765.0 453.33333333333337 C 812.5 453.33333333333337 812.5 408.0 860.0 408.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="20.6"
+                  data-similarity="0.806"
+                  data-source="k8_MC5"
+                  data-target="k9_MC5">
+                <title>Similarity: 0.806 | k8_MC5 → k9_MC5</title>
+            </path>
+            <path d="M 765.0 528.8888888888889 C 812.5 528.8888888888889 812.5 544.0 860.0 544.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.2"
+                  data-similarity="0.705"
+                  data-source="k8_MC6"
+                  data-target="k9_MC7">
+                <title>Similarity: 0.705 | k8_MC6 → k9_MC7</title>
+            </path>
+            <path d="M 765.0 528.8888888888889 C 812.5 528.8888888888889 812.5 612.0 860.0 612.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.5"
+                  data-similarity="0.716"
+                  data-source="k8_MC6"
+                  data-target="k9_MC8">
+                <title>Similarity: 0.716 | k8_MC6 → k9_MC8</title>
+            </path>
+            <path d="M 765.0 604.4444444444445 C 812.5 604.4444444444445 812.5 476.0 860.0 476.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.5"
+                  data-similarity="0.714"
+                  data-source="k8_MC7"
+                  data-target="k9_MC6">
+                <title>Similarity: 0.714 | k8_MC7 → k9_MC6</title>
+            </path>
+            <path d="M 765.0 604.4444444444445 C 812.5 604.4444444444445 812.5 612.0 860.0 612.0" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.5"
+                  data-similarity="0.717"
+                  data-source="k8_MC7"
+                  data-target="k9_MC8">
+                <title>Similarity: 0.717 | k8_MC7 → k9_MC8</title>
+            </path>
+            <path d="M 890.0 68.0 C 937.5 68.0 937.5 494.54545454545456 985.0 494.54545454545456" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="19.5"
+                  data-similarity="0.761"
+                  data-source="k9_MC0"
+                  data-target="k10_MC7">
+                <title>Similarity: 0.761 | k9_MC0 → k10_MC7</title>
+            </path>
+            <path d="M 890.0 136.0 C 937.5 136.0 937.5 61.81818181818182 985.0 61.81818181818182" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="20.2"
+                  data-similarity="0.788"
+                  data-source="k9_MC1"
+                  data-target="k10_MC0">
+                <title>Similarity: 0.788 | k9_MC1 → k10_MC0</title>
+            </path>
+            <path d="M 890.0 204.0 C 937.5 204.0 937.5 618.1818181818182 985.0 618.1818181818182" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="24.7"
+                  data-similarity="0.985"
+                  data-source="k9_MC2"
+                  data-target="k10_MC9">
+                <title>Similarity: 0.985 | k9_MC2 → k10_MC9</title>
+            </path>
+            <path d="M 890.0 272.0 C 937.5 272.0 937.5 309.0909090909091 985.0 309.0909090909091" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="24.7"
+                  data-similarity="0.984"
+                  data-source="k9_MC3"
+                  data-target="k10_MC4">
+                <title>Similarity: 0.984 | k9_MC3 → k10_MC4</title>
+            </path>
+            <path d="M 890.0 340.0 C 937.5 340.0 937.5 247.27272727272728 985.0 247.27272727272728" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="22.9"
+                  data-similarity="0.908"
+                  data-source="k9_MC4"
+                  data-target="k10_MC3">
+                <title>Similarity: 0.908 | k9_MC4 → k10_MC3</title>
+            </path>
+            <path d="M 890.0 408.0 C 937.5 408.0 937.5 370.90909090909093 985.0 370.90909090909093" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="25.0"
+                  data-similarity="0.998"
+                  data-source="k9_MC5"
+                  data-target="k10_MC5">
+                <title>Similarity: 0.998 | k9_MC5 → k10_MC5</title>
+            </path>
+            <path d="M 890.0 476.0 C 937.5 476.0 937.5 123.63636363636364 985.0 123.63636363636364" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="21.7"
+                  data-similarity="0.857"
+                  data-source="k9_MC6"
+                  data-target="k10_MC1">
+                <title>Similarity: 0.857 | k9_MC6 → k10_MC1</title>
+            </path>
+            <path d="M 890.0 612.0 C 937.5 612.0 937.5 432.72727272727275 985.0 432.72727272727275" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="18.2"
+                  data-similarity="0.704"
+                  data-source="k9_MC8"
+                  data-target="k10_MC6">
+                <title>Similarity: 0.704 | k9_MC8 → k10_MC6</title>
+            </path>
+            <path d="M 890.0 612.0 C 937.5 612.0 937.5 556.3636363636364 985.0 556.3636363636364" 
+                  class="flow-path" 
+                  stroke="#888" 
+                  stroke-width="19.4"
+                  data-similarity="0.755"
+                  data-source="k9_MC8"
+                  data-target="k10_MC8">
+                <title>Similarity: 0.755 | k9_MC8 → k10_MC8</title>
+            </path>
+        </g>
+        <!-- Nodes -->
+        <g class="nodes">
+            <g transform="translate(0.0, 226.66666666666666)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#1f77b4" 
+                        data-node-id="k2_MC0"
+                        data-topic-idx="0"
+                        data-k="2">
+                    <title>Topic 0 (K=2) | g__Streptococcus_206, g__Lactobacillus_365, g__Clostridium_781, g__Terrisporobacter_431, g__Lactobacillus_529</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(0.0, 453.3333333333333)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#1f77b4" 
+                        data-node-id="k2_MC1"
+                        data-topic-idx="1"
+                        data-k="2">
+                    <title>Topic 1 (K=2) | g__Lactobacillus_365, g__Turicibacter_19, g__Limosilactobacillus_376, g__Lactobacillus_523, g__Streptococcus_206</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(125.0, 170.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#ff7f0e" 
+                        data-node-id="k3_MC0"
+                        data-topic-idx="0"
+                        data-k="3">
+                    <title>Topic 0 (K=3) | g__Lactobacillus_365, g__Streptococcus_206, g__Clostridium_781, g__Terrisporobacter_431, g__Lactobacillus_523</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(125.0, 340.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#ff7f0e" 
+                        data-node-id="k3_MC1"
+                        data-topic-idx="1"
+                        data-k="3">
+                    <title>Topic 1 (K=3) | g__Lactobacillus_365, g__Lactobacillus_523, g__Cryptobacteroides_838, g__Turicibacter_19, g__Cryptobacteroides_842</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(125.0, 510.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#ff7f0e" 
+                        data-node-id="k3_MC2"
+                        data-topic-idx="2"
+                        data-k="3">
+                    <title>Topic 2 (K=3) | g__Lactobacillus_365, g__Streptococcus_206, g__Turicibacter_19, g__Clostridium_781, g__Limosilactobacillus_376</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T2
+                </text>
+            </g>
+            <g transform="translate(250.0, 136.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#2ca02c" 
+                        data-node-id="k4_MC0"
+                        data-topic-idx="0"
+                        data-k="4">
+                    <title>Topic 0 (K=4) | g__Lactobacillus_365, g__Clostridium_781, g__Lactobacillus_523, g__Terrisporobacter_431, g__Clostridium_896</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(250.0, 272.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#2ca02c" 
+                        data-node-id="k4_MC1"
+                        data-topic-idx="1"
+                        data-k="4">
+                    <title>Topic 1 (K=4) | g__Lactobacillus_365, g__Turicibacter_19, g__Clostridium_781, g__Terrisporobacter_431, g__Limosilactobacillus_376</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(250.0, 408.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#2ca02c" 
+                        data-node-id="k4_MC2"
+                        data-topic-idx="2"
+                        data-k="4">
+                    <title>Topic 2 (K=4) | g__Streptococcus_206, g__Lactobacillus_365, g__Lactobacillus_529, g__Lactobacillus_422, g__Limosilactobacillus_376</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T2
+                </text>
+            </g>
+            <g transform="translate(250.0, 544.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#2ca02c" 
+                        data-node-id="k4_MC3"
+                        data-topic-idx="3"
+                        data-k="4">
+                    <title>Topic 3 (K=4) | g__Lactobacillus_365, g__Lactobacillus_523, g__Unclassified_4618, g__Fusobacterium_B_18, g__Lactobacillus_422</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T3
+                </text>
+            </g>
+            <g transform="translate(375.0, 113.33333333333333)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#d62728" 
+                        data-node-id="k5_MC0"
+                        data-topic-idx="0"
+                        data-k="5">
+                    <title>Topic 0 (K=5) | g__Streptococcus_206, g__Lactobacillus_365, g__Turicibacter_19, g__Clostridium_781, g__Terrisporobacter_431</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(375.0, 226.66666666666666)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#d62728" 
+                        data-node-id="k5_MC1"
+                        data-topic-idx="1"
+                        data-k="5">
+                    <title>Topic 1 (K=5) | g__Streptococcus_206, g__Lactobacillus_365, g__Clostridium_781, g__Lactobacillus_529, g__Terrisporobacter_431</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(375.0, 340.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#d62728" 
+                        data-node-id="k5_MC2"
+                        data-topic-idx="2"
+                        data-k="5">
+                    <title>Topic 2 (K=5) | g__Lactobacillus_365, g__Limosilactobacillus_376, g__Lactobacillus_289, g__Limosilactobacillus_388, g__Streptococcus_206</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T2
+                </text>
+            </g>
+            <g transform="translate(375.0, 453.3333333333333)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#d62728" 
+                        data-node-id="k5_MC3"
+                        data-topic-idx="3"
+                        data-k="5">
+                    <title>Topic 3 (K=5) | g__Unclassified_4611, g__Turicibacter_19, g__Aquirickettsiella_1, g__Streptococcus_280, g__Turicibacter_23</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T3
+                </text>
+            </g>
+            <g transform="translate(375.0, 566.6666666666666)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#d62728" 
+                        data-node-id="k5_MC4"
+                        data-topic-idx="4"
+                        data-k="5">
+                    <title>Topic 4 (K=5) | g__Lactobacillus_365, g__Lactobacillus_523, g__Streptococcus_206, g__Lactobacillus_422, g__Cryptobacteroides_838</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T4
+                </text>
+            </g>
+            <g transform="translate(500.0, 97.14285714285714)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#9467bd" 
+                        data-node-id="k6_MC0"
+                        data-topic-idx="0"
+                        data-k="6">
+                    <title>Topic 0 (K=6) | g__Lactobacillus_365, g__Lactobacillus_422, g__Lactobacillus_295, g__Terrisporobacter_431, g__Saccharofermentans_3</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(500.0, 194.28571428571428)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#9467bd" 
+                        data-node-id="k6_MC1"
+                        data-topic-idx="1"
+                        data-k="6">
+                    <title>Topic 1 (K=6) | g__Lactobacillus_523, g__Lactobacillus_365, g__Lactobacillus_289, g__Unclassified_4618, g__Fusobacterium_B_18</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(500.0, 291.42857142857144)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#9467bd" 
+                        data-node-id="k6_MC2"
+                        data-topic-idx="2"
+                        data-k="6">
+                    <title>Topic 2 (K=6) | g__Streptococcus_206, g__Lactobacillus_365, g__Limosilactobacillus_376, g__Lactobacillus_529, g__Limosilactobacillus_388</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T2
+                </text>
+            </g>
+            <g transform="translate(500.0, 388.57142857142856)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#9467bd" 
+                        data-node-id="k6_MC3"
+                        data-topic-idx="3"
+                        data-k="6">
+                    <title>Topic 3 (K=6) | g__Clostridium_781, g__Lactobacillus_365, g__Terrisporobacter_431, g__Lactobacillus_523, g__Clostridium_896</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T3
+                </text>
+            </g>
+            <g transform="translate(500.0, 485.71428571428567)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#9467bd" 
+                        data-node-id="k6_MC4"
+                        data-topic-idx="4"
+                        data-k="6">
+                    <title>Topic 4 (K=6) | g__Cryptobacteroides_838, g__Cryptobacteroides_842, g__Bifidobacterium_37, g__Turicibacter_19, g__Butyrivibrio_41</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T4
+                </text>
+            </g>
+            <g transform="translate(500.0, 582.8571428571429)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#9467bd" 
+                        data-node-id="k6_MC5"
+                        data-topic-idx="5"
+                        data-k="6">
+                    <title>Topic 5 (K=6) | g__Turicibacter_19, g__Clostridium_781, g__Terrisporobacter_431, g__Clostridium_896, g__Clostridium_782</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T5
+                </text>
+            </g>
+            <g transform="translate(625.0, 85.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#8c564b" 
+                        data-node-id="k7_MC0"
+                        data-topic-idx="0"
+                        data-k="7">
+                    <title>Topic 0 (K=7) | g__Lactobacillus_365, g__Limosilactobacillus_376, g__Lactobacillus_422, g__Limosilactobacillus_388, g__Streptococcus_206</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(625.0, 170.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#8c564b" 
+                        data-node-id="k7_MC1"
+                        data-topic-idx="1"
+                        data-k="7">
+                    <title>Topic 1 (K=7) | g__Streptococcus_206, g__Lactobacillus_365, g__Cryptobacteroides_838, g__Cryptobacteroides_842, g__Bifidobacterium_37</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(625.0, 255.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#8c564b" 
+                        data-node-id="k7_MC2"
+                        data-topic-idx="2"
+                        data-k="7">
+                    <title>Topic 2 (K=7) | g__Lactobacillus_365, g__Clostridium_781, g__Lactobacillus_523, g__Terrisporobacter_431, g__Streptococcus_206</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T2
+                </text>
+            </g>
+            <g transform="translate(625.0, 340.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#8c564b" 
+                        data-node-id="k7_MC3"
+                        data-topic-idx="3"
+                        data-k="7">
+                    <title>Topic 3 (K=7) | g__Lactobacillus_289, g__Unclassified_4618, g__Unclassified_4611, g__Turicibacter_19, g__Escherichia-Shigella_18</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T3
+                </text>
+            </g>
+            <g transform="translate(625.0, 425.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#8c564b" 
+                        data-node-id="k7_MC4"
+                        data-topic-idx="4"
+                        data-k="7">
+                    <title>Topic 4 (K=7) | g__Clostridium_781, g__Turicibacter_19, g__Terrisporobacter_431, g__Clostridium_896, g__Clostridium_782</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T4
+                </text>
+            </g>
+            <g transform="translate(625.0, 510.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#8c564b" 
+                        data-node-id="k7_MC5"
+                        data-topic-idx="5"
+                        data-k="7">
+                    <title>Topic 5 (K=7) | g__Streptococcus_206, g__Lactobacillus_529, g__Streptococcus_248, g__Lactobacillus_365, g__Limosilactobacillus_376</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T5
+                </text>
+            </g>
+            <g transform="translate(625.0, 595.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#8c564b" 
+                        data-node-id="k7_MC6"
+                        data-topic-idx="6"
+                        data-k="7">
+                    <title>Topic 6 (K=7) | g__Lactobacillus_523, g__Lactobacillus_365, g__Fusobacterium_B_18, g__Helicobacter_7, g__Fusobacterium_B_26</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T6
+                </text>
+            </g>
+            <g transform="translate(750.0, 75.55555555555556)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#e377c2" 
+                        data-node-id="k8_MC0"
+                        data-topic-idx="0"
+                        data-k="8">
+                    <title>Topic 0 (K=8) | g__Streptococcus_206, g__Lactobacillus_365, g__Clostridium_781, g__Lactobacillus_529, g__Terrisporobacter_431</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(750.0, 151.11111111111111)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#e377c2" 
+                        data-node-id="k8_MC1"
+                        data-topic-idx="1"
+                        data-k="8">
+                    <title>Topic 1 (K=8) | g__Lactobacillus_365, g__Limosilactobacillus_376, g__Lactobacillus_289, g__Limosilactobacillus_388, g__Romboutsia_225</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(750.0, 226.66666666666669)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#e377c2" 
+                        data-node-id="k8_MC2"
+                        data-topic-idx="2"
+                        data-k="8">
+                    <title>Topic 2 (K=8) | g__Lactobacillus_365, g__Clostridium_781, g__Terrisporobacter_431, g__Lactobacillus_523, g__Streptococcus_206</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T2
+                </text>
+            </g>
+            <g transform="translate(750.0, 302.22222222222223)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#e377c2" 
+                        data-node-id="k8_MC3"
+                        data-topic-idx="3"
+                        data-k="8">
+                    <title>Topic 3 (K=8) | g__Lactobacillus_365, g__Turicibacter_19, g__Streptococcus_206, g__Terrisporobacter_431, g__Lactobacillus_422</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T3
+                </text>
+            </g>
+            <g transform="translate(750.0, 377.77777777777777)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#e377c2" 
+                        data-node-id="k8_MC4"
+                        data-topic-idx="4"
+                        data-k="8">
+                    <title>Topic 4 (K=8) | g__Lactobacillus_523, g__Fusobacterium_B_18, g__Lactobacillus_365, g__Fusobacterium_B_26, g__Helicobacter_7</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T4
+                </text>
+            </g>
+            <g transform="translate(750.0, 453.33333333333337)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#e377c2" 
+                        data-node-id="k8_MC5"
+                        data-topic-idx="5"
+                        data-k="8">
+                    <title>Topic 5 (K=8) | g__Turicibacter_19, g__Clostridium_781, g__Terrisporobacter_431, g__Aquirickettsiella_1, g__Turicibacter_23</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T5
+                </text>
+            </g>
+            <g transform="translate(750.0, 528.8888888888889)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#e377c2" 
+                        data-node-id="k8_MC6"
+                        data-topic-idx="6"
+                        data-k="8">
+                    <title>Topic 6 (K=8) | g__Lactobacillus_365, g__Lactobacillus_422, g__Limosilactobacillus_376, g__Terrisporobacter_431, g__Saccharofermentans_3</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T6
+                </text>
+            </g>
+            <g transform="translate(750.0, 604.4444444444445)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#e377c2" 
+                        data-node-id="k8_MC7"
+                        data-topic-idx="7"
+                        data-k="8">
+                    <title>Topic 7 (K=8) | g__Streptococcus_206, g__Lactobacillus_365, g__Lactobacillus_422, g__Cryptobacteroides_838, g__Cryptobacteroides_842</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T7
+                </text>
+            </g>
+            <g transform="translate(875.0, 68.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC0"
+                        data-topic-idx="0"
+                        data-k="9">
+                    <title>Topic 0 (K=9) | g__Lactobacillus_365, g__Lactobacillus_289, g__Unclassified_4618, g__Fusobacterium_B_18, g__Catenibacterium_18</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(875.0, 136.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC1"
+                        data-topic-idx="1"
+                        data-k="9">
+                    <title>Topic 1 (K=9) | g__Turicibacter_19, g__Lactobacillus_422, g__Aquirickettsiella_1, g__Turicibacter_23, g__MGBC108787_69</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(875.0, 204.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC2"
+                        data-topic-idx="2"
+                        data-k="9">
+                    <title>Topic 2 (K=9) | g__Clostridium_781, g__Terrisporobacter_431, g__Clostridium_896, g__Clostridium_782, g__Turicibacter_19</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T2
+                </text>
+            </g>
+            <g transform="translate(875.0, 272.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC3"
+                        data-topic-idx="3"
+                        data-k="9">
+                    <title>Topic 3 (K=9) | g__Lactobacillus_365, g__Clostridium_781, g__Lactobacillus_523, g__Terrisporobacter_431, g__Clostridium_896</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T3
+                </text>
+            </g>
+            <g transform="translate(875.0, 340.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC4"
+                        data-topic-idx="4"
+                        data-k="9">
+                    <title>Topic 4 (K=9) | g__Lactobacillus_365, g__Lactobacillus_523, g__Streptococcus_159, g__Unclassified_4311, g__Lactobacillus_422</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T4
+                </text>
+            </g>
+            <g transform="translate(875.0, 408.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC5"
+                        data-topic-idx="5"
+                        data-k="9">
+                    <title>Topic 5 (K=9) | g__Turicibacter_19, g__Terrisporobacter_431, g__Clostridium_781, g__Treponema_D_370, g__Terrisporobacter_568</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T5
+                </text>
+            </g>
+            <g transform="translate(875.0, 476.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC6"
+                        data-topic-idx="6"
+                        data-k="9">
+                    <title>Topic 6 (K=9) | g__Cryptobacteroides_838, g__Streptococcus_206, g__Cryptobacteroides_842, g__Bifidobacterium_37, g__Butyrivibrio_41</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T6
+                </text>
+            </g>
+            <g transform="translate(875.0, 544.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC7"
+                        data-topic-idx="7"
+                        data-k="9">
+                    <title>Topic 7 (K=9) | g__Lactobacillus_365, g__Lactobacillus_422, g__Lactobacillus_295, g__Lactobacillus_449, g__Unclassified_4611</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T7
+                </text>
+            </g>
+            <g transform="translate(875.0, 612.0)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#7f7f7f" 
+                        data-node-id="k9_MC8"
+                        data-topic-idx="8"
+                        data-k="9">
+                    <title>Topic 8 (K=9) | g__Lactobacillus_365, g__Streptococcus_206, g__Limosilactobacillus_376, g__Limosilactobacillus_388, g__Lactobacillus_529</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T8
+                </text>
+            </g>
+            <g transform="translate(1000.0, 61.81818181818182)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC0"
+                        data-topic-idx="0"
+                        data-k="10">
+                    <title>Topic 0 (K=10) | g__Aquirickettsiella_1, g__Turicibacter_19, g__Turicibacter_23, g__Ruthenibacterium_9, g__Cryptobacteroides_711</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T0
+                </text>
+            </g>
+            <g transform="translate(1000.0, 123.63636363636364)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC1"
+                        data-topic-idx="1"
+                        data-k="10">
+                    <title>Topic 1 (K=10) | g__Lactobacillus_365, g__Streptococcus_206, g__Cryptobacteroides_838, g__Cryptobacteroides_842, g__Bifidobacterium_37</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T1
+                </text>
+            </g>
+            <g transform="translate(1000.0, 185.45454545454547)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC2"
+                        data-topic-idx="2"
+                        data-k="10">
+                    <title>Topic 2 (K=10) | g__Unclassified_4618, g__Fusobacterium_B_18, g__Lactobacillus_365, g__Fusobacterium_B_26, g__Helicobacter_7</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T2
+                </text>
+            </g>
+            <g transform="translate(1000.0, 247.27272727272728)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC3"
+                        data-topic-idx="3"
+                        data-k="10">
+                    <title>Topic 3 (K=10) | g__Lactobacillus_523, g__Lactobacillus_365, g__Streptococcus_159, g__Unclassified_4311, g__Treponema_D_637</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T3
+                </text>
+            </g>
+            <g transform="translate(1000.0, 309.0909090909091)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC4"
+                        data-topic-idx="4"
+                        data-k="10">
+                    <title>Topic 4 (K=10) | g__Lactobacillus_365, g__Clostridium_781, g__Lactobacillus_523, g__Terrisporobacter_431, g__Clostridium_896</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T4
+                </text>
+            </g>
+            <g transform="translate(1000.0, 370.90909090909093)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC5"
+                        data-topic-idx="5"
+                        data-k="10">
+                    <title>Topic 5 (K=10) | g__Turicibacter_19, g__Terrisporobacter_431, g__Clostridium_781, g__Treponema_D_370, g__Terrisporobacter_568</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T5
+                </text>
+            </g>
+            <g transform="translate(1000.0, 432.72727272727275)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC6"
+                        data-topic-idx="6"
+                        data-k="10">
+                    <title>Topic 6 (K=10) | g__Streptococcus_206, g__Lactobacillus_529, g__Streptococcus_248, g__Limosilactobacillus_376, g__Limosilactobacillus_388</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T6
+                </text>
+            </g>
+            <g transform="translate(1000.0, 494.54545454545456)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC7"
+                        data-topic-idx="7"
+                        data-k="10">
+                    <title>Topic 7 (K=10) | g__Lactobacillus_289, g__Lactobacillus_365, g__Lactobacillus_523, g__Terrisporobacter_431, g__Escherichia-Shigella_18</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T7
+                </text>
+            </g>
+            <g transform="translate(1000.0, 556.3636363636364)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC8"
+                        data-topic-idx="8"
+                        data-k="10">
+                    <title>Topic 8 (K=10) | g__Lactobacillus_365, g__Limosilactobacillus_376, g__Lactobacillus_422, g__Streptococcus_206, g__Limosilactobacillus_388</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T8
+                </text>
+            </g>
+            <g transform="translate(1000.0, 618.1818181818182)">
+                <circle r="12" 
+                        class="node-circle" 
+                        fill="#bcbd22" 
+                        data-node-id="k10_MC9"
+                        data-topic-idx="9"
+                        data-k="10">
+                    <title>Topic 9 (K=10) | g__Clostridium_781, g__Terrisporobacter_431, g__Clostridium_896, g__Clostridium_782, g__Turicibacter_19</title>
+                </circle>
+                <text x="20" y="0" dy="0.35em" class="node-label">
+                    T9
+                </text>
+            </g>
+        </g>
+        <!-- K Value Labels -->
+        <text x="0.0" y="-30" text-anchor="middle" class="k-label" fill="#1f77b4">
+            K=2
+        </text>
+        <text x="125.0" y="-30" text-anchor="middle" class="k-label" fill="#ff7f0e">
+            K=3
+        </text>
+        <text x="250.0" y="-30" text-anchor="middle" class="k-label" fill="#2ca02c">
+            K=4
+        </text>
+        <text x="375.0" y="-30" text-anchor="middle" class="k-label" fill="#d62728">
+            K=5
+        </text>
+        <text x="500.0" y="-30" text-anchor="middle" class="k-label" fill="#9467bd">
+            K=6
+        </text>
+        <text x="625.0" y="-30" text-anchor="middle" class="k-label" fill="#8c564b">
+            K=7
+        </text>
+        <text x="750.0" y="-30" text-anchor="middle" class="k-label" fill="#e377c2">
+            K=8
+        </text>
+        <text x="875.0" y="-30" text-anchor="middle" class="k-label" fill="#7f7f7f">
+            K=9
+        </text>
+        <text x="1000.0" y="-30" text-anchor="middle" class="k-label" fill="#bcbd22">
+            K=10
+        </text>
+        <!-- Legend -->
+        <g transform="translate(20, 600)">
+            <text x="0" y="8" class="legend-title">Similarity Sankey Diagram</text>
+            <text x="0" y="24" class="legend-text">Min Similarity: 0.70</text>
+            <text x="0" y="36" class="legend-text">Flows: 54 shown</text>
+            <text x="0" y="48" class="legend-text">Nodes: 54 topics</text>
+            <text x="0" y="60" class="legend-text">Flow thickness ∝ similarity strength</text>
+            <text x="0" y="72" class="legend-text">Hover elements for details</text>
+        </g>
+    </g>
+</svg>
