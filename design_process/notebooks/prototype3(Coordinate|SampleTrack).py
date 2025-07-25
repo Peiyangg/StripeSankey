@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.14.10"
-app = marimo.App(width="medium")
+app = marimo.App(width="full")
 
 
 @app.cell
@@ -38,14 +38,17 @@ def _():
 
 @app.cell
 def _(pd):
-    metadata_df= pd.read_csv('/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/Luke_data/Luke_WP1/data/metadata_new_updated.csv', index_col=0)
-    selected_metadata=["Country", 'Breed_type', 'Outdoor_access', 'Bedding_present', 'Slatted floor', "Age_category"]
-    MC_feature_folder_path = "/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/LDA_workflow/VIZ_design/9Models_Luke/ASVProbabilities"  # Folder with ASVProbabilities files
-    Sample_MC_folder_path = "/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/LDA_workflow/VIZ_design/9Models_Luke/SampleProbabilities_wide"
+    metadata_df= pd.read_csv('data/prototype1/metadata_new_updated.csv', index_col=0)
+    features_metadata=metadata_df[["Country", 'Breed_type', 'Outdoor_access', 'Bedding_present', 'Slatted floor', "Age_category"]]
+
+    MC_feature_folder_path = "data/prototype1/ASVProbabilities" 
+    Sample_MC_folder_path = "data/prototype1/SampleProbabilities_wide"
+
+
     return MC_feature_folder_path, Sample_MC_folder_path
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(ET, defaultdict, glob, json, np, os, pd, re):
     class StripeSankeyDataProcessor:
         def __init__(self, sample_mc_folder, mc_feature_folder):
@@ -874,8 +877,8 @@ def _(
         # Save processed data
         processor.save_processed_data(sankey_data)
 
-        mallet_folder = '/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/LDA_workflow/VIZ_design/9Models_Luke/Diagnosis'
-        preplexity_path = '/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/Luke_data/Luke_WP1/lda_asv/lda_loop/all_MC_metrics_2_20.csv'
+        mallet_folder = 'data/prototype3/9Models_Luke/Diagnosis'
+        preplexity_path = 'data/prototype3/all_MC_metrics_2_20.csv'
         updated_sankey_data = processor.integrate_mallet_diagnostics_fixed(sankey_data, mallet_folder)
 
         fully_integrated_data = processor.integrate_all_model_data(
@@ -886,7 +889,7 @@ def _(
     return (sankey_data,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(anywidget, traitlets):
     class CoordinateAxesLayout(anywidget.AnyWidget):
         _esm = """
@@ -1608,7 +1611,7 @@ def _(anywidget, traitlets):
     return (CoordinateAxesLayout,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(CoordinateAxesLayout, sankey_data):
     nodes_data = []
 
@@ -1630,9 +1633,9 @@ def _(CoordinateAxesLayout, sankey_data):
     # Create widget with your data
     widget_test = CoordinateAxesLayout(
         nodes_data=nodes_data,
-        node_height=100,
+        node_height=50,
         height=1500,
-        width=2000,
+        width=1500,
         enable_crossing_reduction=True,
     )
     return (widget_test,)
