@@ -88,10 +88,10 @@ def _(mo):
 
 @app.cell
 def _(pd):
-    metadata_df= pd.read_csv('/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/Luke_data/Luke_WP1/data/metadata_new_updated.csv', index_col=0)
+    metadata_df= pd.read_csv('design_process/data/prototype1/metadata_new_updated.csv', index_col=0)
     features_metadata=metadata_df[["Country", 'Breed_type', 'Outdoor_access', 'Bedding_present', 'Slatted floor', "Age_category"]]
-    topic_word_folder = "/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/LDA_workflow/VIZ_design/9Models_Luke/ASVProbabilities"  # Folder with ASVProbabilities files
-    sample_topic_folder = "/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/LDA_workflow/VIZ_design/9Models_Luke/SampleProbabilities_wide"
+    topic_word_folder = "design_process/data/prototype1/ASVProbabilities"  # Folder with ASVProbabilities files
+    sample_topic_folder = "design_process/data/prototype1/SampleProbabilities_wide"
     return features_metadata, sample_topic_folder, topic_word_folder
 
 
