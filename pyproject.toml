@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "StripeSankey"
-version = "0.1.0"
+version = "0.3.0"
 description = "Interactive Sankey diagram widget for topic modeling analysis with sample flow tracing"
 readme = "README.md"
 license = {file = "LICENSE"}
