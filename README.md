@@ -1,200 +1,209 @@
-# Stripe Sankey Widget
+<p align="center">
+  <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/StripeSankey_logo.png" alt="StripeSankey" width="420">
+</p>
 
-An interactive Sankey diagram widget for understanding how samples are represented by topics across different LDA models. This tool can also be applied to similar algorithms like NMF and LSA.
+<p align="center">
+  <em>The volume-accurate k-sweep figure, and the consensus behind it.</em>
+</p>
 
-LDA is a powerful tool for achieving soft clustering and finding latent groups beyond initial hypotheses. However, the challenge of applying LDA to 16S rRNA data is that sequence reads are less informative than human language when users want to evaluate a model's results. Even when metrics are applied, making decisions remains difficult.
+---
 
-We designed this StripeSankey diagram to make LDA results more accessible and integrated two widely used metrics—perplexity and coherence score—into novel visual encodings.
+Fit a soft-clustering model at several `k` and you get several answers, with no
+way to see how they relate. StripeSankey fits the sweep and draws all of it as
+one figure: each column is a **full census** of one `k`, and node height and
+ribbon width are the same head count — so every ribbon entering or leaving a
+node sums to exactly that node, and a ribbon's thickness is a number of samples
+you can read off.
 
-Overview of StripeSankey diagram:
-<img src="fig/StripeSankey_metic.jpeg" alt="Description" width="600">
+It was built for microbiome count tables and is not limited to them: the
+pipeline needs a count matrix, a per-feature annotation and per-sample
+metadata, and nothing in it knows what the features are. The worked example is
+population genetics.
 
-Legend of metrics coour: 
-<img src="fig/legend.png" alt="Description" width="200">
+![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/methodology.png)
 
-After click one flow:
-<img src="fig/StripeSankey_click.jpg" alt="Description" width="600">
-
-
-
-## Installation
-
-### From PyPI
 ```bash
 pip install StripeSankey
 ```
-## Data Preprocessing
 
-## Quick Start
-
-```python
-import stripe_sankey
-from stripe_sankey import StripeSankeyInline
-
-# Load your processed topic modeling data
-sankey_data = {
-    "nodes": {
-        "K2_MC1": {
-            "high_count": 45,
-            "medium_count": 23,
-            "model_metrics": {"perplexity": 1.2},
-            "mallet_diagnostics": {"coherence": -0.15}
-        },
-        # ... more nodes
-    },
-    "flows": [
-        {
-            "source_segment": "K2_MC1_high",
-            "target_segment": "K3_MC2_medium", 
-            "source_k": 2,
-            "target_k": 3,
-            "sample_count": 15,
-            "samples": [{"sample": "doc_1", "source_prob": 0.8, "target_prob": 0.6}]
-        },
-        # ... more flows
-    ],
-    "k_range": [2, 3, 4, 5]
-}
-
-# Create and display widget
-widget = StripeSankeyInline(sankey_data=sankey_data)
-widget
-```
-
-## Visualization Modes
-
-### Default Mode
-Shows topic representations with high/medium probability segments:
-```python
-widget = StripeSankeyInline(sankey_data=data, mode="default")
-```
-
-### Metric Mode  
-Color-codes topics by quality metrics (perplexity + coherence):
-```python
-widget = StripeSankeyInline(sankey_data=data, mode="metric")
-
-# Customize metric weights
-widget.update_metric_config(red_weight=0.9, blue_weight=0.7)
-```
-
-## Interactive Features
-
-### Sample Flow Tracing
-- **Click any flow** to highlight sample trajectories across K values
-- **Orange trajectories** show where samples move between topics
-- **Count badges** display number of traced samples in each segment
-- **Line thickness** represents sample flow volume
-- **Click background** to clear selection
-
-### Visual Elements
-- **Stacked bars**: High (dark) and medium (light) probability representations
-- **Curved flows**: Proportional thickness based on sample counts
-- **Barycenter layout**: Optimized positioning to reduce visual complexity
-- **Hover tooltips**: Detailed information on flows and segments
-
-## Data Format
-
-Your data should follow this structure:
+## Four steps
 
 ```python
-{
-    "nodes": {
-        "K{k}_MC{mc}": {
-            "high_count": int,           # Samples with prob ≥ 0.67
-            "medium_count": int,         # Samples with prob 0.33-0.66
-            "total_probability": float,
-            "model_metrics": {
-                "perplexity": float      # Lower is better
-            },
-            "mallet_diagnostics": {
-                "coherence": float       # Higher (less negative) is better
-            }
-        }
-    },
-    "flows": [
-        {
-            "source_segment": "K{k}_MC{mc}_{level}",
-            "target_segment": "K{k+1}_MC{mc}_{level}",
-            "source_k": int,
-            "target_k": int,
-            "sample_count": int,
-            "average_probability": float,
-            "samples": [
-                {
-                    "sample": str,           # Sample identifier
-                    "source_prob": float,    # Probability in source topic
-                    "target_prob": float     # Probability in target topic
-                }
-            ]
-        }
-    ],
-    "k_range": [2, 3, 4, 5]  # Topic numbers analyzed
-}
+import stripesankey as ss
+
+ss.prepare(base, counts, feature_annotation, metadata, level="family")
+ss.sweep(base, k_range=range(2, 11))          # one fit per k, early-stopped
+W_by_k = ss.load_W(base)                      # {k: DataFrame(sample x LC)}
+fig = ss.sweep_figure(base, metadata_df=metadata, hover_field=["group"])
 ```
 
-## Configuration Options
+Already have a sweep from somewhere else? Skip the first two — the figures take
+a dict of DataFrames, however it was produced. See *Bring your own sweep*.
 
-### Widget Parameters
+### 1 — `prepare`
+
+Checks that the three tables line up, collapses features to one annotation
+level, and writes the feature table plus a manifest.
+
+| table | index | columns |
+|---|---|---|
+| `counts` | sample id | feature id |
+| `feature_annotation` | feature id | annotation levels |
+| `metadata` | sample id | sample variables |
+
+The checks are **structural only**: there is no way to look at a matrix of
+numbers and tell what it is, so nothing tries. What it can know is that the
+indices agree — and those two statements also settle orientation, which no
+heuristic can. A transposed table fails both, and its transpose passing is the
+proof, so the error says so outright. Counts are handled by rounding and then
+checking the result is usable, which is also what catches a 0–1
+relative-abundance table.
+
+`level` is **any column of `feature_annotation`**, not a fixed taxonomy enum —
+annotation schemes belong to the dataset.
+
+### 2 — `sweep`
+
+One fit per k from a fixed seed, written to disk as each lands.
+
 ```python
-widget = StripeSankeyInline(
-    sankey_data=data,
-    width=1200,           # Canvas width
-    height=800,           # Canvas height  
-    mode="default"        # "default" or "metric"
-)
+ss.sweep(base, k_range=range(2, 11),
+         implementation="lda_gensim",     # or "nmf", or a callable (k, seed) -> estimator
+         random_state=42)
 ```
 
-### Metric Mode Configuration
+Both fitting limits are **ceilings with an early exit**, so they are set high
+and each fit takes only as long as it needs. Whether a ceiling was reached is
+measured, not assumed:
+
 ```python
-widget.update_metric_config(
-    red_weight=0.8,       # Perplexity influence (0-1)
-    blue_weight=0.8,      # Coherence influence (0-1) 
-    min_saturation=0.3    # Minimum color brightness
-)
+ss.convergence_report(base)
 ```
 
-### Color Schemes
+| column | low/high means |
+|---|---|
+| `docs_converged` | the per-document cap `iterations` is too small |
+| `passes` at the ceiling | `max_passes` is too small |
+
+A fit that did not settle stays on disk and is flagged; anything pooling across
+k refuses it, because one unsettled fit poisons the consensus for every cluster.
+
+### 3 — `load_W` / `load_H`
+
+`X ≈ W · H`, which is also scikit-learn's convention:
+
+| | shape | on disk |
+|---|---|---|
+| `W` | sample × LC | `results/W/W_{k}.csv` |
+| `H` | LC × feature | `results/H/H_{k}.csv` |
+
+A column of `W` is a **latent component (LC)**. `W` is all the figures need.
+
+### Bring your own sweep
+
+Any model giving a per-sample mixture will do. With scikit-learn's NMF:
+
 ```python
-widget.color_schemes = {
-    2: "#1f77b4",  # Blue for K=2
-    3: "#ff7f0e",  # Orange for K=3
-    4: "#2ca02c",  # Green for K=4
-    5: "#d62728"   # Red for K=5
-}
+from sklearn.decomposition import NMF
+
+W_by_k = {}
+for k in range(2, 11):
+    model = NMF(n_components=k, beta_loss="kullback-leibler", solver="mu",
+                init="nndsvdar", max_iter=3000, random_state=42)
+    W = model.fit_transform(counts.to_numpy())
+    W_by_k[k] = pd.DataFrame(W / W.sum(axis=1, keepdims=True),
+                             index=counts.index,
+                             columns=[f"LC{i}" for i in range(k)])
 ```
 
-## Use Cases
+Rows must be the **same sample index at every k** — the census and the ribbon
+identity both assume every column describes the same population. Nothing is
+written to disk; pass `W_by_k` straight to the calls below.
 
-- **Topic Model Analysis**: Understand how topics evolve across different K values
-- **Sample Trajectory Tracking**: Follow samples through topic assignments
-- **Model Quality Assessment**: Visual comparison of perplexity and coherence metrics
-- **Flow Bottleneck Detection**: Identify where samples cluster or disperse
-- **Research Presentation**: Interactive demonstrations of topic modeling results
+## Plotting
 
+![stripesankey (top) and metasankey by region (bottom) on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/population_new_figure.png)
+
+*The [1000 Genomes example](#example): stripesankey on top, metasankey by
+`region` below — same layout, so each bar lines up across the two.*
+
+### stripesankey — coloured by consensus cluster
+
+```python
+fig = ss.stripesankey(W_by_k, metadata_df=metadata, hover_field=["group"])
+# or, straight from a sweep on disk:
+fig = ss.sweep_figure(base, metadata_df=metadata, hover_field=["group"])
+```
+
+Colour is the **consensus cluster**: the `k`-agnostic grouping, computed here by
+removing the co-membership expected by chance at each `k` before averaging, so
+it does not drift when the `k` range changes.
+
+Click a band, a ribbon or a cluster chip to trace those samples across every
+`k`. Click a `K =` label to focus that column — it restacks by the first
+`hover_field`. Read the selection back from `fig.selected_samples`.
+
+### metasankey — the same figure, cut by metadata
+
+```python
+fig = ss.metasankey(W_by_k, metadata_df=metadata, hover_field=["group"])
+fig = ss.sweep_figure(base, view="metasankey",
+                      metadata_df=metadata, hover_field=["group"])
+```
+
+Identical layout, one thing changed: a node is sliced into a metadata field's
+categories instead of into clusters. "Identical" is literal — both views come
+out of one layout path, so a bar at a given height in one render is the same bar
+in the other, and flipping between them answers *"is this cluster that
+category?"* by eye.
+
+### affinity heatmap — the matrix the clusters came from
+
+```python
+Q = ss.consensus_affinity({k: W.to_numpy() for k, W in W_by_k.items()})
+Q = pd.DataFrame(Q, index=metadata.index, columns=metadata.index)
+
+fig, order, labels = ss.affinity_heatmap(Q, above=metadata,
+                                         annotations=["group"])
+```
+
+<p align="center">
+  <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/affinity_K2-8.png" alt="Consensus affinity Q for the 1000 Genomes example, ordered by consensus cluster, with cluster and region strips" width="600">
+</p>
+
+`Q` is the signed, chance-corrected co-membership: positive means two samples
+share components *more* than chance, negative *less*. Samples are ordered by
+consensus cluster by default, and within a cluster by how core each member is,
+so a gradient between neighbouring blocks stays visible rather than scrambled.
+
+The **consensus cluster is drawn as the strip nearest the heatmap by default**,
+coloured from the same `Q` — the blocks are what the ordering is built from, so
+leaving them unlabelled makes the figure hard to read. Pass
+`cluster_strip=False` to omit it. Add one or two coarse metadata fields beyond
+that; a 26-level field above a 2,000-wide heatmap is a band of confetti.
+
+## Example
+
+[`example/population/`](example/population) runs all three figures on
+[pong](https://github.com/ramachandran-lab/pong)'s published 1000 Genomes
+Phase 3 result (2,426 individuals, ADMIXTURE at K=2…8), as marimo and Jupyter
+notebooks. It is a control with a known answer: the consensus recovers the five
+continental regions at **ARI 0.84** without ever seeing them, merging EUR and
+AMR — which is correct, since those panels share ancestry.
+
+## Hard labels
+
+For an ensemble of **hard** labels instead of soft assignments — k-means at
+several `k`, or different algorithms at one `k`:
+
+```python
+fig = ss.hardstripe(labels_df, colorby="consensus", metadata_df=metadata)
+```
+
+## Citation
+
+If StripeSankey is useful in your work, please cite the paper (in preparation).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-<!-- ## Citation
-
-If you use this widget in your research, please cite:
-
-```bibtex
-@software{stripe_sankey,
-  title = {Stripe Sankey Widget: Interactive Topic Flow Visualization},
-  author = {Your Name},
-  url = {https://github.com/Peiyangg/StripeSankey},
-  year = {2024}
-}
-``` -->
-
-## Acknowledgments
-
-- Built with [anywidget](https://anywidget.dev/) - modern Jupyter widget framework
-- Visualization powered by [D3.js](https://d3js.org/)
-
-## Support
-
-- 📖 [Documentation](https://github.com/Peiyangg/StripeSankey#readme)
+MIT

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "StripeSankey"
-version = "0.3.0"
-description = "Interactive Sankey diagram widget for topic modeling analysis with sample flow tracing"
+version = "1.0.0.dev0"
+description = "Fit a soft-clustering sweep across k and read it as one volume-accurate Sankey figure -- built for microbiome data, not limited to it"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -25,7 +25,8 @@ keywords = [
     "interactive"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Framework :: Jupyter",
     "Framework :: Jupyter :: JupyterLab",
     "Framework :: Jupyter :: JupyterLab :: 3",
@@ -34,7 +35,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -44,14 +44,35 @@ classifiers = [
 dependencies = [
     "anywidget>=0.9.0",
     "traitlets>=5.0.0",
+    "numpy>=1.20.0",
+    "pandas>=1.3.0",
+    "scipy>=1.7.0",
+    # `sweep(implementation="nmf")` and any caller-supplied estimator, plus the
+    # ARI/agreement measures in modes.py.
+    "scikit-learn>=1.0",
+    # mode_rule="clumppling": Louvain on the replicate graph, after a
+    # Tracy-Widom test for community structure.
+    "python-louvain>=0.16",
+    "networkx>=2.5",
+    "TracyWidom>=0.3.0",
+    # signed Constant Potts partitioning of the consensus affinity. Core, not
+    # an extra: the lineage colouring IS the consensus, and a package whose
+    # main figure needs a second install is worse than a heavier one.
+    "leidenalg>=0.12.0",
+    "python-igraph>=1.0.0",
+    "matplotlib>=3.3.0",
+    # `sweep(implementation="lda_gensim")`, the default. Fitting is part of the
+    # package, not an add-on: `prepare` and `sweep` are steps 1 and 2 of the
+    # documented workflow.
+    "gensim>=4.0.0",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [project.urls]
-Homepage = "https://github.com/Peiyangg/StripeSankey"
-Documentation = "https://github.com/Peiyangg/StripeSankey#readme"
-Repository = "https://github.com/Peiyangg/StripeSankey.git"
-"Bug Tracker" = "https://github.com/Peiyangg/StripeSankey/issues"
+Homepage = "https://gitlab.kuleuven.be/aida-lab/public/StripeSankey"
+Documentation = "https://gitlab.kuleuven.be/aida-lab/public/StripeSankey#readme"
+Repository = "https://gitlab.kuleuven.be/aida-lab/public/StripeSankey.git"
+"Bug Tracker" = "https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -67,18 +88,31 @@ docs = [
 ]
 
 [tool.hatch.version]
-path = "StripeSankey/__init__.py"
+path = "src/stripesankey/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+# The README points at docs/ and example/, so a tarball without them has
+# dangling links.
+include = [
+    "src/stripesankey",
+    "docs",
+    "example",
+    "README.md",
+    "LICENSE",
+]
 
 [tool.hatch.build.targets.wheel]
-packages = ["StripeSankey"]
+# src layout. The distribution stays "StripeSankey"; the import name is
+# lowercase per PEP 8, which is also what the wheels were already called.
+packages = ["src/stripesankey"]
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py39']
 
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py39"
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -90,7 +124,7 @@ select = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

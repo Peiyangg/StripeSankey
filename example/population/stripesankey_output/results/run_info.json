@@ -1,0 +1,38 @@
+{
+  "implementation": "admixture (pong major mode)",
+  "k_list": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "level": null,
+  "left_axis": null,
+  "provenance": "pong's bundled 1000 Genomes Phase 3 example; major mode per K as reported by pong's own CLI",
+  "convergence": {
+    "2": {
+      "converged": true
+    },
+    "3": {
+      "converged": true
+    },
+    "4": {
+      "converged": true
+    },
+    "5": {
+      "converged": true
+    },
+    "6": {
+      "converged": true
+    },
+    "7": {
+      "converged": true
+    },
+    "8": {
+      "converged": true
+    }
+  }
+}
