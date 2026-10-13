@@ -121,7 +121,7 @@ def _(mo):
 
 
 @app.cell
-def _(K_LIST, W, clusters, metadata, mo, ss):
+def _(BASE, metadata, mo, ss):
     HOVER = ["region", "population"]
 
     # The palette and the legend tree are not passed: `stripesankey` builds both
@@ -129,8 +129,7 @@ def _(K_LIST, W, clusters, metadata, mo, ss):
     # agrees with the ribbons by construction. Override that pair only together
     # -- a palette without a matching tree is how the two start disagreeing.
     stripe = mo.ui.anywidget(ss.stripesankey(
-        W, clusters=clusters, k_list=K_LIST,
-        metadata_df=metadata, hover_field=HOVER, figsize=(3, 5.2)))
+        BASE, metadata_df=metadata, hover_field=HOVER, figsize=(3, 5.2)))
     stripe
     return (stripe,)
 
@@ -177,12 +176,11 @@ def _(mo):
 
 
 @app.cell
-def _(K_LIST, W, clusters, field, metadata, mo, ss):
+def _(BASE, field, metadata, mo, ss):
     # The FIRST hover_field is what nodes and flows are coloured by.
     fields = [field.value] + [f for f in ("region", "population") if f != field.value]
     meta_stripe = mo.ui.anywidget(ss.metasankey(
-        W, clusters=clusters, k_list=K_LIST,
-        metadata_df=metadata, hover_field=fields, figsize=(3, 5.2)))
+        BASE, metadata_df=metadata, hover_field=fields, figsize=(3, 5.2)))
     meta_stripe
     return
 

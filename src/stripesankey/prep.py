@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import warnings
 from datetime import datetime, timezone
 from typing import Iterable
@@ -171,8 +172,11 @@ def prepare(base_directory: str,
     Writes ``intermediate/{features.csv, feature_annotation.csv, manifest.json}``
     and returns the manifest. One folder holds one preprocessing, so the
     feature table is always ``features.csv`` and the manifest records which
-    level produced it; re-running with a different level refuses rather than
-    silently overwriting.
+    level produced it. Preparing the folder again replaces it. If the feature
+    table changed -- another level, other samples -- ``results/`` is removed
+    too: those fits describe the old table, and ``sweep`` would otherwise skip
+    their k and draw them as fits of the new one. Re-running with the same
+    inputs keeps everything.
     """
     inter = os.path.join(base_directory, "intermediate")
     os.makedirs(inter, exist_ok=True)
@@ -209,19 +213,27 @@ def prepare(base_directory: str,
         "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
-    mpath = os.path.join(inter, "manifest.json")
-    if os.path.exists(mpath):
-        old = json.load(open(mpath))
-        if old.get("level") != level:
-            raise ValueError(
-                f"{base_directory} was already prepared at level={old.get('level')!r}; "
-                f"refusing to overwrite it with level={level!r}. One folder holds one "
-                "preprocessing -- use a different base_directory."
+    # Compared as the exact bytes written, so re-running a notebook cell with
+    # the same inputs is a no-op rather than a refit.
+    table = features.to_csv().encode()
+    fpath = os.path.join(inter, "features.csv")
+    res = os.path.join(base_directory, "results")
+    if os.path.exists(fpath) and os.path.isdir(res):
+        with open(fpath, "rb") as f:
+            changed = f.read() != table
+        if changed:
+            shutil.rmtree(res)
+            warnings.warn(
+                f"the feature table in {base_directory} changed (level={level!r}), "
+                "so results/ was removed: those fits describe the old table. "
+                "Run sweep() again.",
+                stacklevel=2,
             )
 
-    features.to_csv(os.path.join(inter, "features.csv"))
+    with open(fpath, "wb") as f:
+        f.write(table)
     feature_annotation.to_csv(os.path.join(inter, "feature_annotation.csv"))
-    with open(mpath, "w") as f:
+    with open(os.path.join(inter, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)
 
     if verbose:

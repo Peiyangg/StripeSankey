@@ -2,48 +2,12 @@
   <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/StripeSankey_logo.png" alt="StripeSankey" width="420">
 </p>
 
-<p align="center">
-  <em>The volume-accurate k-sweep figure, and the consensus behind it.</em>
-</p>
 
 ---
 
-Fit a soft-clustering model at several `k` and you get several answers, with no
-way to see how they relate. StripeSankey fits the sweep and draws all of it as
-one figure: each column is a **full census** of one `k`, and node height and
-ribbon width are the same head count — so every ribbon entering or leaving a
-node sums to exactly that node, and a ribbon's thickness is a number of samples
-you can read off.
+StripeSankey fits a soft-clustering model at several `k` (a *sweep*) and draws all of it as one figure. Every ribbon entering or leaving a node sums to exactly that node, and a ribbon's thickness is a number of samples you can read off.
 
-It was built for microbiome count tables and is not limited to them: the
-pipeline needs a count matrix, a per-feature annotation and per-sample
-metadata, and nothing in it knows what the features are. The worked example is
-population genetics.
-
-![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/methodology.png)
-
-```bash
-pip install StripeSankey
-```
-
-## Four steps
-
-```python
-import stripesankey as ss
-
-ss.prepare(base, counts, feature_annotation, metadata, level="family")
-ss.sweep(base, k_range=range(2, 11))          # one fit per k, early-stopped
-W_by_k = ss.load_W(base)                      # {k: DataFrame(sample x LC)}
-fig = ss.sweep_figure(base, metadata_df=metadata, hover_field=["group"])
-```
-
-Already have a sweep from somewhere else? Skip the first two — the figures take
-a dict of DataFrames, however it was produced. See *Bring your own sweep*.
-
-### 1 — `prepare`
-
-Checks that the three tables line up, collapses features to one annotation
-level, and writes the feature table plus a manifest.
+The pipeline supports LDA and NMF, and takes three tables: a **count matrix**, a **per-feature annotation** (like taxa in microbiome) and **per-sample metadata**.
 
 | table | index | columns |
 |---|---|---|
@@ -51,93 +15,106 @@ level, and writes the feature table plus a manifest.
 | `feature_annotation` | feature id | annotation levels |
 | `metadata` | sample id | sample variables |
 
-The checks are **structural only**: there is no way to look at a matrix of
-numbers and tell what it is, so nothing tries. What it can know is that the
-indices agree — and those two statements also settle orientation, which no
-heuristic can. A transposed table fails both, and its transpose passing is the
-proof, so the error says so outright. Counts are handled by rounding and then
-checking the result is usable, which is also what catches a 0–1
-relative-abundance table.
+The pipeline also lets users bring their own sweep, computed elsewhere (see *Fit your customized models*).
 
-`level` is **any column of `feature_annotation`**, not a fixed taxonomy enum —
-annotation schemes belong to the dataset.
+![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/methodology.png)
+
+```bash
+pip install stripesankey
+```
+
+## Fit models with StripeSankey
+
+### 1 — `prepare`
+`prepare` checks that the three tables line up (matching sample and feature ids, usable counts), collapses the counts to one annotation `level` if you give one, and writes the result to `base/intermediate/` for `sweep` to read.
+
+```python
+import stripesankey as ss
+base = 'LOCAL FOLDER PATH TO SAVE CACHE'
+# fit LDA/NMF models via StripeSankey, example of microbiome count table
+ss.prepare(base, counts, feature_annotation, metadata, level="genus")
+```
+`level` is any column of `feature_annotation`. For instance, in microbiome or ecology, you may want to group your count table at genus level.
+
 
 ### 2 — `sweep`
 
-One fit per k from a fixed seed, written to disk as each lands.
+One fit per k, each saved to disk as it finishes.
 
 ```python
-ss.sweep(base, k_range=range(2, 11),
-         implementation="lda_gensim",     # or "nmf", or a callable (k, seed) -> estimator
-         random_state=42)
+ss.sweep(base, k_range=range(2, 11), implementation="nmf", random_state=42)
 ```
 
-Both fitting limits are **ceilings with an early exit**, so they are set high
-and each fit takes only as long as it needs. Whether a ceiling was reached is
-measured, not assumed:
+Implementations include:
 
-```python
-ss.convergence_report(base)
+| Algorithm | implementation | source lib | API |
+|---|---|---|---|
+| `LDA` | Variational Bayes | [*gensim*](https://radimrehurek.com/gensim/auto_examples/tutorials/run_lda.html#sphx-glr-auto-examples-tutorials-run-lda-py) | lda_gensim |
+| `LDA` | Markov Chain Monte Carlo | [*MALLET*](https://mimno.github.io/Mallet/) | lda_mallet |
+| `NMF` | generalized KL loss, initialised with *nndsvdar* | [*scikit-learn*](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.NMF.html) | nmf |
+
+After fitting, results are saved in the *base* folder with the structure below:
+
 ```
-
-| column | low/high means |
-|---|---|
-| `docs_converged` | the per-document cap `iterations` is too small |
-| `passes` at the ceiling | `max_passes` is too small |
-
-A fit that did not settle stays on disk and is flagged; anything pooling across
-k refuses it, because one unsettled fit poisons the consensus for every cluster.
-
-### 3 — `load_W` / `load_H`
-
-`X ≈ W · H`, which is also scikit-learn's convention:
+base/
+├── intermediate/                       # written by prepare
+│   ├── features.csv                    
+│   ├── feature_annotation.csv
+│   └── manifest.json
+└── results/                            # written by sweep
+    ├── W/W_{k}.csv                     # one file per k
+    ├── H/H_{k}.csv                     # one file per k
+    ├── diagnostics/topic_diff_{k}.csv  # LDA (gensim) only
+    ├── consensus.json                  # consensus cluster of each sample
+    ├── run_info.json                   # k list, implementation, convergence per k
+    └── metrics.csv
+```
 
 | | shape | on disk |
 |---|---|---|
 | `W` | sample × LC | `results/W/W_{k}.csv` |
 | `H` | LC × feature | `results/H/H_{k}.csv` |
 
-A column of `W` is a **latent component (LC)**. `W` is all the figures need.
+## Fit your customized models
 
-### Bring your own sweep
+### Bring your own model via python
 
-Any model giving a per-sample mixture will do. With scikit-learn's NMF:
+Define a function that takes `k` and a seed and returns an unfitted model, then pass it as `implementation`. `sweep` fits it at every `k` and saves `W`, `H` and the consensus, as it does for the built-in implementations:
 
 ```python
 from sklearn.decomposition import NMF
 
-W_by_k = {}
-for k in range(2, 11):
-    model = NMF(n_components=k, beta_loss="kullback-leibler", solver="mu",
-                init="nndsvdar", max_iter=3000, random_state=42)
-    W = model.fit_transform(counts.to_numpy())
-    W_by_k[k] = pd.DataFrame(W / W.sum(axis=1, keepdims=True),
-                             index=counts.index,
-                             columns=[f"LC{i}" for i in range(k)])
+def my_nmf(k, seed):
+    return NMF(n_components=k, beta_loss="kullback-leibler", solver="mu",
+               init="nndsvdar", max_iter=3000, random_state=seed)
+
+ss.sweep(base, k_range=range(2, 11), implementation=my_nmf, random_state=42)
 ```
 
-Rows must be the **same sample index at every k** — the census and the ribbon
-identity both assume every column describes the same population. Nothing is
-written to disk; pass `W_by_k` straight to the calls below.
+The model needs scikit-learn's interface: `fit_transform(X)` returns `W` (sample × LC) and `components_` holds `H` (LC × feature).
+
+### Bring your own sweep via other programming languages
+
+If your model runs in another language, such as R, or in a well-established tool like *ADMIXTURE*, run the sweep there and save each `W` as `base/results/W/W_{k}.csv`: the sample id in the first column, then one column per LC, rows summing to 1, and the same samples in the same order at every `k`. Then run `sweep` without `k_range`:
+
+```python
+ss.sweep(base)
+```
+[`example/population`](example/population) does this with [pong](https://github.com/ramachandran-lab/pong)'s precomputed ADMIXTURE results for the 1000 Genomes (K = 2…8).
 
 ## Plotting
 
-![stripesankey (top) and metasankey by region (bottom) on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/population_new_figure.png)
-
-*The [1000 Genomes example](#example): stripesankey on top, metasankey by
-`region` below — same layout, so each bar lines up across the two.*
+Both figures read the sweep from `base`, wherever it was fitted.
 
 ### stripesankey — coloured by consensus cluster
 
 ```python
-fig = ss.stripesankey(W_by_k, metadata_df=metadata, hover_field=["group"])
-# or, straight from a sweep on disk:
-fig = ss.sweep_figure(base, metadata_df=metadata, hover_field=["group"])
+fig = ss.stripesankey(base, metadata_df=metadata, hover_field=["group"])
 ```
 
-Colour is the **consensus cluster**: the `k`-agnostic grouping, computed here by
-removing the co-membership expected by chance at each `k` before averaging, so
-it does not drift when the `k` range changes.
+![stripesankey on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/stripesankey_population.png)
+
+*An interactive version is available in [`example/population/viz/stripesankey_K2-8.html`](example/population/viz/stripesankey_K2-8.html).*
 
 Click a band, a ribbon or a cluster chip to trace those samples across every
 `k`. Click a `K =` label to focus that column — it restacks by the first
@@ -146,25 +123,21 @@ Click a band, a ribbon or a cluster chip to trace those samples across every
 ### metasankey — the same figure, cut by metadata
 
 ```python
-fig = ss.metasankey(W_by_k, metadata_df=metadata, hover_field=["group"])
-fig = ss.sweep_figure(base, view="metasankey",
-                      metadata_df=metadata, hover_field=["group"])
+fig = ss.metasankey(base, metadata_df=metadata, hover_field=["group"])
 ```
 
+![metasankey by region on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/metasankey_population.png)
+
+*An interactive version is available in [`example/population/viz/metasankey_K2-8.html`](example/population/viz/metasankey_K2-8.html).*
+
 Identical layout, one thing changed: a node is sliced into a metadata field's
-categories instead of into clusters. "Identical" is literal — both views come
-out of one layout path, so a bar at a given height in one render is the same bar
-in the other, and flipping between them answers *"is this cluster that
-category?"* by eye.
+categories instead of into clusters.
 
 ### affinity heatmap — the matrix the clusters came from
 
 ```python
-Q = ss.consensus_affinity({k: W.to_numpy() for k, W in W_by_k.items()})
-Q = pd.DataFrame(Q, index=metadata.index, columns=metadata.index)
-
-fig, order, labels = ss.affinity_heatmap(Q, above=metadata,
-                                         annotations=["group"])
+Q = ss.consensus_affinity(ss.load_W(base))                                         # the affinity matrix
+fig, order, labels = ss.affinity_heatmap(Q, above=metadata, annotations=["group"])  # the plot
 ```
 
 <p align="center">
@@ -173,23 +146,8 @@ fig, order, labels = ss.affinity_heatmap(Q, above=metadata,
 
 `Q` is the signed, chance-corrected co-membership: positive means two samples
 share components *more* than chance, negative *less*. Samples are ordered by
-consensus cluster by default, and within a cluster by how core each member is,
-so a gradient between neighbouring blocks stays visible rather than scrambled.
+consensus cluster by default.
 
-The **consensus cluster is drawn as the strip nearest the heatmap by default**,
-coloured from the same `Q` — the blocks are what the ordering is built from, so
-leaving them unlabelled makes the figure hard to read. Pass
-`cluster_strip=False` to omit it. Add one or two coarse metadata fields beyond
-that; a 26-level field above a 2,000-wide heatmap is a band of confetti.
-
-## Example
-
-[`example/population/`](example/population) runs all three figures on
-[pong](https://github.com/ramachandran-lab/pong)'s published 1000 Genomes
-Phase 3 result (2,426 individuals, ADMIXTURE at K=2…8), as marimo and Jupyter
-notebooks. It is a control with a known answer: the consensus recovers the five
-continental regions at **ARI 0.84** without ever seeing them, merging EUR and
-AMR — which is correct, since those panels share ancestry.
 
 ## Hard labels
 
@@ -202,7 +160,6 @@ fig = ss.hardstripe(labels_df, colorby="consensus", metadata_df=metadata)
 
 ## Citation
 
-If StripeSankey is useful in your work, please cite the paper (in preparation).
 
 ## License
 

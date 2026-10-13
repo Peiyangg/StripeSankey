@@ -109,11 +109,13 @@ def consensus_affinity(usage_matrices):
     Args:
         usage_matrices: ``{k: ndarray (N, k)}`` -- sample x MC usage, one entry
             per K, non-negative, with the same N rows in the same order for
-            every K.
+            every K. DataFrames work too, e.g. ``load_W(base)``.
 
     Returns:
         ``Q`` (N, N) float64, symmetric, zero diagonal, signed. Positive =
-        together more than chance, negative = less than chance.
+        together more than chance, negative = less than chance. Given
+        DataFrames, a DataFrame indexed by sample on both axes, which
+        :func:`affinity_heatmap` takes as it is.
 
     The diagonal is zeroed deliberately: ``B_k[i,i]`` is sample i's own MC
     purity (the Simpson concentration of its profile), which varies for reasons
@@ -129,6 +131,9 @@ def consensus_affinity(usage_matrices):
 
     Q = (Q + Q.T) / 2.0                    # kill float asymmetry
     np.fill_diagonal(Q, 0.0)
+    first = next(iter(usage_matrices.values()))
+    if isinstance(first, pd.DataFrame):
+        return pd.DataFrame(Q, index=first.index, columns=first.index)
     return Q
 
 

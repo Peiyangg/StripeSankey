@@ -1,10 +1,14 @@
 """
 StripeSankey -- the volume-accurate k-sweep figure, and the consensus behind it.
 
-The unit of input is one sweep of soft assignments: ``W_by_k``, a dict
-``{k: DataFrame(sample x LC)}``. ``W`` is the sample-side matrix of
-``X ~ W . H``, as the paper and sklearn both name it; this package never sees
-``H``, because it never sees features.
+The unit of input is one sweep of soft assignments, kept in a base folder as
+``results/W/W_{k}.csv`` -- one ``sample x LC`` table per k. ``W`` is the
+sample-side matrix of ``X ~ W . H``, as the paper and sklearn both name it::
+
+    prepare(base, ...)        check the tables, write the feature table
+    sweep(base, k_range)      fit one model per k, then the consensus across k
+    sweep(base)               only the consensus, over W tables already there
+    stripesankey(base, ...)   draw it
 
 Two views, one layout::
 
@@ -13,9 +17,6 @@ Two views, one layout::
 
 "Same layout" is literal: both go through one census/cut/ribbon path, so a bar
 at a given height in one render is the same bar in the other.
-
-Nothing here reads a results folder -- callers pass objects. ``lda4microbiome``
-owns the cache-folder translation.
 """
 
 __version__ = "1.0.0.dev0"
@@ -25,7 +26,6 @@ from .prep import validate_tables, prepare, load_manifest, load_features
 from .fit import sweep, verify_pass_loop
 from .cache import (load_W, load_H, load_run_info, load_consensus,
                     load_topic_diff, convergence_report, unsettled_k)
-from .plots import sweep_figure, load_sweep_figure_inputs
 
 from .api import stripesankey, metasankey, build_sankey_data, cluster_lineage
 from .stripesankey import StripeSankeyInline, hardstripe, save_widget_html
@@ -71,8 +71,6 @@ __all__ = [
     "load_features",
     "convergence_report",
     "unsettled_k",
-    "sweep_figure",
-    "load_sweep_figure_inputs",
     # the figures
     "stripesankey",
     "metasankey",

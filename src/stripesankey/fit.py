@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import pickle
 import re
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -26,7 +27,7 @@ from typing import Callable, Iterable
 import numpy as np
 import pandas as pd
 
-from .cache import _report_convergence, load_W
+from .cache import _ks_on_disk, _report_convergence, load_W
 from .prep import load_features, load_manifest
 
 __all__ = ["sweep", "verify_pass_loop"]
@@ -104,18 +105,16 @@ class _GensimLog(logging.Handler):
 
 
 class _NMF:
-    """The built-in NMF backend as a picklable callable.
-
-    A closure or lambda would not survive ``spawn``: the worker unpickles the
-    factory by import, and a function defined inside another function has no
-    importable name. Same reason a user-supplied ``implementation`` has to be
-    module-level -- see the check in :func:`sweep`.
-    """
+    """The built-in NMF backend: a ``(k, seed) -> estimator`` factory, the
+    same shape as a user-supplied ``implementation``."""
 
     #: cvanmf's single decomposition: GKL loss, multiplicative updates,
-    #: nndsvdar init, no regularisation.
+    #: nndsvdar init, no regularisation. `max_iter` is a ceiling, not a cost:
+    #: sklearn stops as soon as the loss settles (`tol`). Measured need on HRD
+    #: at k=2..4: 50-360 iterations. It is not overridable -- `fit_params`
+    #: covers gensim only -- which is why it is set this high.
     PARAMS = dict(beta_loss="kullback-leibler", solver="mu", init="nndsvdar",
-                  max_iter=3000, alpha_W=0.0, alpha_H=0.0, l1_ratio=0.0)
+                  max_iter=10000, alpha_W=0.0, alpha_H=0.0, l1_ratio=0.0)
 
     def __call__(self, k, seed):
         from sklearn.decomposition import NMF
@@ -131,6 +130,9 @@ def _init_worker(features_values, index, columns, backend, params):
     _W["columns"] = [str(c) for c in columns]
     _W["backend"] = backend
     _W["params"] = params
+    if params.get("factory") is not None:
+        # Pickled by value in the parent -- see `sweep`.
+        _W["params"] = {**params, "factory": pickle.loads(params["factory"])}
     if backend == "lda_gensim":
         from gensim.corpora import Dictionary
         dct = Dictionary([_W["columns"]])
@@ -294,13 +296,13 @@ def _coherence(H: pd.DataFrame, texts, dictionary, topn=20):
 #: `iterations` is gensim's own per-document cap and already exits at
 #: `gamma_threshold` -- a document that settles in 300 sweeps never runs 5000.
 #: `max_passes` is enforced by the pass loop in `_fit_gensim`, which stops as
-#: soon as the run settles. Measured need: 40-55 passes on one real table,
-#: 61-118 on another, so 400 is headroom for both while costing what the data
-#: actually asks for.
+#: soon as the run settles. Measured need across the real tables tried: 35-332
+#: passes (HRD at k=2..4: 35-98). 1000 is about three times the most any of
+#: them needed, while costing only what the data actually asks for.
 #:
 #: Neither is assumed to have been enough -- both are measured per run and
 #: reported (see `convergence_report`). Override via **fit_params if you must.
-_FIT_BUDGET = {"max_passes": 400, "iterations": 5000,
+_FIT_BUDGET = {"max_passes": 1000, "iterations": 5000,
                "alpha": "auto", "eta": "auto"}
 
 
@@ -325,11 +327,13 @@ def _write_fit(res, k, seed, W, H, diag, features, lcs, diags, verbose):
 
 
 def sweep(base_directory: str,
-          k_range: Iterable[int],
+          k_range: Iterable[int] | None = None,
           *,
           implementation: str | Callable = "lda_gensim",
           random_state: int = 42,
           rel_tol: float = 1e-3,
+          resolution: float = 0.0,
+          noise_threshold: float = 0.0,
           workers: int | None = None,
           force: bool = False,
           verbose: bool = True,
@@ -346,16 +350,25 @@ def sweep(base_directory: str,
     co-membership has the share expected by chance removed before the k values
     are averaged, so the clustering does not drift when the k range changes.
 
+    A k whose ``results/W/W_{k}.csv`` already exists is not refitted, so
+    ``sweep(base)`` with no ``k_range`` fits nothing and only computes the
+    consensus over the W tables on disk. That is how a sweep fitted elsewhere
+    -- in R, with ADMIXTURE, by pong -- gets its consensus: save each W as
+    ``results/W/W_{k}.csv`` (rows = samples, the same samples in the same
+    order at every k) and call ``sweep(base)``. ``prepare()`` is only needed
+    when there is something to fit.
+
     Args:
         base_directory: the folder ``prepare()`` wrote to; read and written.
-        k_range: the k values to fit.
+        k_range: the k values to fit. Default: the k values already in
+            ``results/W/``, so nothing is fitted.
         implementation: ``'lda_gensim'``, ``'nmf'``, or a callable
             ``(k, seed) -> estimator`` satisfying sklearn's decomposition
             protocol (``fit_transform() -> W``, ``.components_ -> H``), which
-            is the same convention this package uses. A callable
-            must be importable by name -- module-level ``def`` or a class with
-            ``__call__``, not a lambda -- because fits run in a spawn-based
-            pool. Checked before any work is submitted.
+            is the same convention this package uses. Any callable works -- a
+            ``def`` in a notebook cell, a lambda, a closure -- because it is
+            sent to the worker processes by value. Checked before any work is
+            submitted.
         random_state: the seed. One fit per k means this fixes the result.
         rel_tol: a fit counts as settled when its final ``topic diff`` is below
             ``rel_tol`` of its own peak -- scale-free, because the raw value
@@ -374,6 +387,11 @@ def sweep(base_directory: str,
             The companion number, ``docs_converged_frac``, is the one with a
             clean separation (0.54 at ``iterations=400`` against 0.95-0.99 at
             5000) and it gates a different limit -- the per-document cap.
+        resolution, noise_threshold: the consensus clustering, passed to
+            :func:`cluster_from_affinity`. Higher ``resolution`` gives more,
+            smaller clusters; a sample whose mean affinity to its own cluster
+            is at most ``noise_threshold`` is labelled ``-1``. Nothing is
+            refitted to change them: ``sweep(base, resolution=0.1)``.
         workers: processes to fit with (default: ``min(cpu_count, 10)``).
             ``workers=1`` fits in-process with no pool at all, which is the way
             out of any context where ``spawn`` cannot re-import the calling
@@ -394,12 +412,15 @@ def sweep(base_directory: str,
     Returns the ``run_info`` dict.
     """
     res = os.path.join(base_directory, "results")
-    for sub in ("W", "H"):
-        os.makedirs(os.path.join(res, sub), exist_ok=True)
-
-    manifest = load_manifest(base_directory)
-    features = load_features(base_directory)
-    k_list = sorted(set(int(k) for k in k_range))
+    on_disk = _ks_on_disk(base_directory)
+    if k_range is None:
+        if not on_disk:
+            raise FileNotFoundError(
+                f"no W tables in {res}/W. Pass k_range to fit them, or save a "
+                "sweep fitted elsewhere there as W_<k>.csv, one file per k.")
+        k_list = on_disk
+    else:
+        k_list = sorted(set(int(k) for k in k_range))
 
     if callable(implementation):
         backend, factory, label = "callable", implementation, getattr(
@@ -415,18 +436,19 @@ def sweep(base_directory: str,
         )
 
     if factory is not None:
-        # Fail here, with a sentence that says what to do, rather than inside
-        # multiprocessing with `Can't get local object '<locals>.factory'`.
-        import pickle
+        # Sent to the workers BY VALUE. Plain pickle sends a function by name,
+        # and one defined in a notebook lives in a `__main__` that a spawned
+        # worker does not have: it passed a pickle round-trip here and then
+        # broke the pool. cloudpickle sends the code itself. Fail here, with a
+        # sentence that says what to do, rather than inside multiprocessing.
+        import cloudpickle
         try:
-            pickle.loads(pickle.dumps(factory))
+            factory = cloudpickle.dumps(factory)
         except Exception as exc:
             raise TypeError(
                 f"implementation={label!r} cannot be sent to a worker process "
-                f"({exc}). Fits run in a spawn-based pool, so the callable has "
-                "to be importable by name: define it at module level (a plain "
-                "`def`, or a class with `__call__`), not as a lambda or a "
-                "function nested inside another."
+                f"({exc}). Whatever the function refers to has to be "
+                "picklable: create open files, locks or connections inside it."
             ) from exc
 
     unknown = set(fit_params) - set(_FIT_BUDGET)
@@ -436,14 +458,25 @@ def sweep(base_directory: str,
     budget = {**_FIT_BUDGET, **fit_params}
     params = {**budget, "rel_tol": rel_tol, "factory": factory}
 
-    todo = k_list if force else [
-        k for k in k_list
-        if not os.path.exists(os.path.join(res, "W", f"W_{k}.csv"))
-    ]
+    todo = k_list if force else [k for k in k_list if k not in on_disk]
+    if todo:
+        try:
+            manifest = load_manifest(base_directory)
+            features = load_features(base_directory)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"no W table for k={todo}, and nothing to fit one from: "
+                f"{base_directory} has no intermediate/ -- run prepare() first."
+            ) from None
+        for sub in ("W", "H"):
+            os.makedirs(os.path.join(res, sub), exist_ok=True)
     if verbose:
         skipped = sorted(set(k_list) - set(todo))
-        print(f"[sweep] {label}: k={k_list} -> {len(todo)} fit(s)"
-              + (f" ({skipped} already on disk, skipped)" if skipped else ""))
+        if todo:
+            print(f"[sweep] {label}: k={k_list} -> {len(todo)} fit(s)"
+                  + (f" ({skipped} already on disk, skipped)" if skipped else ""))
+        else:
+            print(f"[sweep] k={k_list}: every W is on disk, nothing to fit")
 
     workers = workers or min(os.cpu_count() or 1, 10)
     diags: list[dict] = []
@@ -484,16 +517,23 @@ def sweep(base_directory: str,
     # k *before* averaging, so the answer does not drift when the k range
     # changes -- which is the whole reason it is keyed by k.
     from . import mr_consensus as mrc
+    from .api import _check
 
     Ws = load_W(base_directory, k_list)
+    # The check the figures make, made before anything is written: W tables
+    # saved from elsewhere are where a reordered sample index comes from, and
+    # the consensus pairs samples by row position.
+    _check(Ws)
     index = next(iter(Ws.values())).index
     Q = mrc.consensus_affinity({k: df.to_numpy() for k, df in Ws.items()})
-    labels = np.asarray(mrc.cluster_from_affinity(Q, resolution=0.0,
-                                                  noise_threshold=0.0))
+    labels = np.asarray(mrc.cluster_from_affinity(
+        Q, resolution=resolution, noise_threshold=noise_threshold))
     # Q itself is not stored: it is N x N (47 MB at 2,400 samples) and
     # recomputable from W in a second. The labels are what the figures read.
     consensus = {
         "k_pooled": sorted(Ws),
+        "resolution": resolution,
+        "noise_threshold": noise_threshold,
         "sample_to_cluster": {str(s): int(l) for s, l in zip(index, labels)},
         "sizes": {int(c): int((labels == c).sum()) for c in sorted(set(labels))},
     }
@@ -511,27 +551,41 @@ def sweep(base_directory: str,
                            "seconds") if d.get(q) is not None}
             for d in diags}
 
-    metrics = _representative_metrics(base_directory, k_list, conv, verbose=verbose)
+    # Coherence needs the feature table, which a sweep fitted elsewhere does
+    # not come with -- and the figures need only W.
+    metrics = None
+    if os.path.exists(os.path.join(base_directory, "intermediate", "features.csv")):
+        metrics = _representative_metrics(base_directory, k_list, conv,
+                                          verbose=verbose)
 
-    run_info = {
-        "implementation": label,
-        "level": manifest.get("level"),
-        "k_list": k_list,
-        "random_state": random_state,
-        "params": {**budget, "rel_tol": rel_tol},
-        "left_axis": "perplexity" if backend == "lda_gensim" else "reconstruction_err",
+    if todo:
+        run_info = {
+            "implementation": label,
+            "level": manifest.get("level"),
+            "k_list": k_list,
+            "random_state": random_state,
+            "params": {**budget, "rel_tol": rel_tol},
+            "left_axis": ("perplexity" if backend == "lda_gensim"
+                          else "reconstruction_err"),
+        }
+    else:
+        run_info = {"k_list": k_list}
+    run_info.update({
         "convergence": conv,
         "seconds": round(time.perf_counter() - t0, 1),
         "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }
+    })
     info_path = os.path.join(res, "run_info.json")
-    if os.path.exists(info_path) and not force:
-        old = json.load(open(info_path))
-        merged = {**(old.get("convergence") or {}), **conv}
-        run_info = {**old, **run_info, "convergence": merged}
+    old = json.load(open(info_path)) if os.path.exists(info_path) and not force else {}
+    # With nothing fitted here, the run that wrote the W tables on disk still
+    # describes them, so its record stands; tables saved from elsewhere have
+    # no record, and are marked as such.
+    run_info = {"implementation": "external", **old, **run_info,
+                "convergence": {**(old.get("convergence") or {}), **conv}}
     with open(info_path, "w") as f:
         json.dump(run_info, f, indent=2)
-    metrics.to_csv(os.path.join(res, "metrics.csv"), index=False)
+    if metrics is not None:
+        metrics.to_csv(os.path.join(res, "metrics.csv"), index=False)
 
     _report_convergence(run_info, verbose=verbose)
     return run_info

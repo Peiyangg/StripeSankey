@@ -18,12 +18,12 @@ re-deriving a published major mode is not what the example is for.
 
     python scripts/build_from_pong.py <path to 1kg_p3> 
 """
-import json
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+
+import stripesankey as ss
 
 HERE = Path(__file__).resolve().parent.parent          # example/population
 # The readers expect `<base>/results/...`, because a sweep's base directory
@@ -60,44 +60,14 @@ def main(src: Path):
         Ws[k] = W
         print(f"  W_{k}.csv  {W.shape[0]} individuals x {W.shape[1]} components")
 
-    # ---- consensus across K, the same call the sweep makes ----------------
-    sys.path.insert(0, str(Path(
-        "/Users/huopeiyang/Library/CloudStorage/OneDrive-KULeuven/py_working/"
-        "gitlab/LDA4Microbiome_Workflow")))
-    from lda4microbiome import mr_consensus as mrc
-
-    index = Ws[ks[0]].index
-    Q = mrc.consensus_affinity({k: W.to_numpy() for k, W in Ws.items()})
-    labels = np.asarray(mrc.cluster_from_affinity(Q, resolution=0.0,
-                                                  noise_threshold=0.0))
-    # Q is N x N, so it is 47 MB at 2,426 individuals in float64 -- and it is
-    # recomputable from W in a second. The labels are what the figures read, so
-    # only those are stored.
-    with open(OUT / "consensus.json", "w") as f:
-        json.dump({
-            "k_pooled": ks,
-            "sample_to_cluster": {str(s): int(l) for s, l in zip(index, labels)},
-            "sizes": {int(c): int((labels == c).sum()) for c in sorted(set(labels))},
-        }, f, indent=2)
-    print(f"  consensus across K={ks}: "
-          f"{len(set(labels) - {-1})} cluster(s) "
-          f"{ {int(c): int((labels == c).sum()) for c in sorted(set(labels))} }")
-
-    with open(OUT / "run_info.json", "w") as f:
-        json.dump({
-            "implementation": "admixture (pong major mode)",
-            "k_list": ks,
-            "level": None,
-            "left_axis": None,
-            "provenance": "pong's bundled 1000 Genomes Phase 3 example; "
-                          "major mode per K as reported by pong's own CLI",
-            # Every K is pong's published major mode, so there is nothing for
-            # this package's convergence gate to judge -- the fits were not
-            # made here.
-            "convergence": {str(k): {"converged": True} for k in ks},
-        }, f, indent=2)
+    # ---- consensus across K ----------------------------------------------
+    # Every W is on disk, so `sweep` fits nothing: it checks the tables line
+    # up, then writes consensus.json and run_info.json next to them. The fits
+    # were not made here, so there is no convergence for it to judge.
+    ss.sweep(BASE)
 
     # ---- the individuals' labels, as metadata ----------------------------
+    index = Ws[ks[0]].index
     # Three columns, and `region` is the superpopulation: AFR / AMR / EAS /
     # EUR / SAS, the 5-way grouping of the 26 `population` codes.
     src_meta = src / "data" / "metadata.csv"

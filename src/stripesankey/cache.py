@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import Iterable
 
 import numpy as np
@@ -49,6 +50,15 @@ def load_W(base_directory: str,
     return out
 
 
+def _ks_on_disk(base_directory: str) -> list[int]:
+    """The k values with a ``results/W/W_{k}.csv``, whoever wrote it."""
+    wdir = os.path.join(base_directory, "results", "W")
+    if not os.path.isdir(wdir):
+        return []
+    found = (re.fullmatch(r"W_(\d+)\.csv", name) for name in os.listdir(wdir))
+    return sorted(int(m.group(1)) for m in found if m)
+
+
 def load_run_info(base_directory: str) -> dict:
     with open(os.path.join(base_directory, "results", "run_info.json")) as f:
         return json.load(f)
@@ -72,9 +82,10 @@ def _report_convergence(run_info: dict, *, verbose: bool = True) -> list[int]:
 
     Nothing is refused here. A k that did not settle stays on disk, because
     throwing away the k values that *did* settle -- along with the time they
-    cost -- is worse than carrying a flagged one. The refusal belongs where a
-    bad ``W`` would be used by something pooling **across** k: one unsettled
-    model poisons the chance-corrected Q for every cluster.
+    cost -- is worse than carrying a flagged one. The consensus pools every k
+    as it is; the figures leave a flagged k out unless told not to
+    (``exclude_unsettled``). The built-in budgets are set high enough that a
+    flagged k should be rare.
     """
     conv = run_info.get("convergence", {})
     rows, bad = [], []
@@ -112,10 +123,10 @@ def _report_convergence(run_info: dict, *, verbose: bool = True) -> list[int]:
                       f"{('-' if err is None else f'{err:.2f}'):>12}  "
                       f"{'settled' if ok else 'NOT settled'}")
     if bad and verbose:
-        print(f"\n[sweep] WARNING: k={bad} did not settle within max_passes. "
-              f"They are on disk and flagged in run_info.json['convergence']. "
-              f"Anything pooling across k should exclude them: one unsettled "
-              f"W poisons the chance-corrected Q for every cluster.")
+        print(f"\n[sweep] WARNING: k={bad} did not settle within the fitting "
+              f"budget. They are on disk, flagged in "
+              f"run_info.json['convergence'] and included in the consensus; "
+              f"the figures leave them out unless exclude_unsettled=False.")
     return bad
 
 

@@ -50,6 +50,10 @@ dependencies = [
     # `sweep(implementation="nmf")` and any caller-supplied estimator, plus the
     # ARI/agreement measures in modes.py.
     "scikit-learn>=1.0",
+    # sends a caller-supplied `implementation` to the worker processes by
+    # value, so a function defined in a notebook works. joblib already depends
+    # on it; named here because `sweep` imports it.
+    "cloudpickle>=3.0",
     # mode_rule="clumppling": Louvain on the replicate graph, after a
     # Tracy-Widom test for community structure.
     "python-louvain>=0.16",
