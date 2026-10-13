@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/StripeSankey_logo.png" alt="StripeSankey" width="420">
+  <img src="docs/StripeSankey_logo.png" alt="StripeSankey" width="420">
 </p>
 
 
 ---
 
-StripeSankey fits a soft-clustering model at several `k` (a *sweep*) and draws all of it as one figure. Every ribbon entering or leaving a node sums to exactly that node, and a ribbon's thickness is a number of samples you can read off.
+StripeSankey fits a mixed membership model at several `k` (a *sweep*) and draws all of it as one figure. Every ribbon entering or leaving a node sums to exactly that node, and a ribbon's thickness is a number of samples you can read off.
 
 The pipeline supports LDA and NMF, and takes three tables: a **count matrix**, a **per-feature annotation** (like taxa in microbiome) and **per-sample metadata**.
 
@@ -17,7 +17,7 @@ The pipeline supports LDA and NMF, and takes three tables: a **count matrix**, a
 
 The pipeline also lets users bring their own sweep, computed elsewhere (see *Fit your customized models*).
 
-![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/methodology.png)
+![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](docs/methodology.png)
 
 ```bash
 pip install stripesankey
@@ -112,7 +112,7 @@ Both figures read the sweep from `base`, wherever it was fitted.
 fig = ss.stripesankey(base, metadata_df=metadata, hover_field=["group"])
 ```
 
-![stripesankey on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/stripesankey_population.png)
+![stripesankey on the 1000 Genomes example, K=2…8](example/population/viz/stripesankey_population.png)
 
 *An interactive version is available in [`example/population/viz/stripesankey_K2-8.html`](example/population/viz/stripesankey_K2-8.html).*
 
@@ -126,7 +126,7 @@ Click a band, a ribbon or a cluster chip to trace those samples across every
 fig = ss.metasankey(base, metadata_df=metadata, hover_field=["group"])
 ```
 
-![metasankey by region on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/metasankey_population.png)
+![metasankey by region on the 1000 Genomes example, K=2…8](example/population/viz/metasankey_population.png)
 
 *An interactive version is available in [`example/population/viz/metasankey_K2-8.html`](example/population/viz/metasankey_K2-8.html).*
 
@@ -141,7 +141,7 @@ fig, order, labels = ss.affinity_heatmap(Q, above=metadata, annotations=["group"
 ```
 
 <p align="center">
-  <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/affinity_K2-8.png" alt="Consensus affinity Q for the 1000 Genomes example, ordered by consensus cluster, with cluster and region strips" width="600">
+  <img src="example/population/viz/affinity_K2-8.png" alt="Consensus affinity Q for the 1000 Genomes example, ordered by consensus cluster, with cluster and region strips" width="600">
 </p>
 
 `Q` is the signed, chance-corrected co-membership: positive means two samples
