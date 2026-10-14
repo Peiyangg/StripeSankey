@@ -19,13 +19,13 @@ Two views, one layout::
 at a given height in one render is the same bar in the other.
 """
 
-__version__ = "1.0.0.dev0"
+__version__ = "0.4.0"
 
 # --- the pipeline: prepare -> sweep -> read it back -> draw ---------------
 from .prep import validate_tables, prepare, load_manifest, load_features
 from .fit import sweep, verify_pass_loop
 from .cache import (load_W, load_H, load_run_info, load_consensus,
-                    load_topic_diff, convergence_report, unsettled_k)
+                    load_topic_diff, load_ll, convergence_report, unsettled_k)
 
 from .api import stripesankey, metasankey, build_sankey_data, cluster_lineage
 from .stripesankey import StripeSankeyInline, hardstripe, save_widget_html
@@ -67,6 +67,7 @@ __all__ = [
     "load_run_info",
     "load_consensus",
     "load_topic_diff",
+    "load_ll",
     "load_manifest",
     "load_features",
     "convergence_report",

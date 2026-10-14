@@ -1,0 +1,12 @@
+/* The sidebar header is white (see conf.py) so the logo's dark text shows;
+   give the search box an edge on it. */
+.wy-side-nav-search input[type="text"] {
+  border-color: #c9c9c9;
+}
+
+/* The theme keeps table cells on one line and scrolls the table sideways;
+   let them wrap so descriptions stay readable at the content width. */
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+  white-space: normal;
+}

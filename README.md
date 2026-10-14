@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/StripeSankey_logo.png" alt="StripeSankey" width="420">
+  <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/StripeSankey_logo.png" alt="StripeSankey" width="420">
 </p>
 
 
@@ -17,7 +17,7 @@ The pipeline supports LDA and NMF, and takes three tables: a **count matrix**, a
 
 The pipeline also lets users bring their own sweep, computed elsewhere (see *Fit your customized models*).
 
-![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](docs/methodology.png)
+![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/methodology.png)
 
 ```bash
 pip install stripesankey
@@ -53,6 +53,19 @@ Implementations include:
 | `LDA` | Markov Chain Monte Carlo | [*MALLET*](https://mimno.github.io/Mallet/) | lda_mallet |
 | `NMF` | generalized KL loss, initialised with *nndsvdar* | [*scikit-learn*](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.NMF.html) | nmf |
 
+`lda_mallet` takes one more argument, `mallet`: the path to MALLET's `bin/mallet` launcher. MALLET is a Java program and is not bundled with StripeSankey, so [download it](https://mimno.github.io/Mallet/) yourself and make sure Java is availble.
+
+```python
+ss.sweep(base, k_range=range(2, 11), implementation="lda_mallet",
+         mallet="/path/to/Mallet", random_state=42)
+```
+
+Expect `lda_mallet` to be much slower than `lda_gensim` and `nmf`, for two reasons:
+
+1. MALLET fits LDA by Markov chain Monte Carlo (collapsed Gibbs sampling)
+2. Convergence has to be watched.
+
+
 After fitting, results are saved in the *base* folder with the structure below:
 
 ```
@@ -60,11 +73,13 @@ base/
 ├── intermediate/                       # written by prepare
 │   ├── features.csv                    
 │   ├── feature_annotation.csv
-│   └── manifest.json
+│   ├── manifest.json
+│   └── mallet/corpus.txt               # the count table as MALLET's input
 └── results/                            # written by sweep
     ├── W/W_{k}.csv                     # one file per k
     ├── H/H_{k}.csv                     # one file per k
     ├── diagnostics/topic_diff_{k}.csv  # LDA (gensim) only
+    ├── diagnostics/ll_{k}.csv          # LDA (MALLET) only
     ├── consensus.json                  # consensus cluster of each sample
     ├── run_info.json                   # k list, implementation, convergence per k
     └── metrics.csv
@@ -100,7 +115,7 @@ If your model runs in another language, such as R, or in a well-established tool
 ```python
 ss.sweep(base)
 ```
-[`example/population`](example/population) does this with [pong](https://github.com/ramachandran-lab/pong)'s precomputed ADMIXTURE results for the 1000 Genomes (K = 2…8).
+[`example/population`](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/tree/main/example/population) does this with [pong](https://github.com/ramachandran-lab/pong)'s precomputed ADMIXTURE results for the 1000 Genomes (K = 2…8).
 
 ## Plotting
 
@@ -112,9 +127,9 @@ Both figures read the sweep from `base`, wherever it was fitted.
 fig = ss.stripesankey(base, metadata_df=metadata, hover_field=["group"])
 ```
 
-![stripesankey on the 1000 Genomes example, K=2…8](example/population/viz/stripesankey_population.png)
+![stripesankey on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/stripesankey_population.png)
 
-*An interactive version is available in [`example/population/viz/stripesankey_K2-8.html`](example/population/viz/stripesankey_K2-8.html).*
+*An interactive version is available in [`example/population/viz/stripesankey_K2-8.html`](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/blob/main/example/population/viz/stripesankey_K2-8.html).*
 
 Click a band, a ribbon or a cluster chip to trace those samples across every
 `k`. Click a `K =` label to focus that column — it restacks by the first
@@ -126,9 +141,9 @@ Click a band, a ribbon or a cluster chip to trace those samples across every
 fig = ss.metasankey(base, metadata_df=metadata, hover_field=["group"])
 ```
 
-![metasankey by region on the 1000 Genomes example, K=2…8](example/population/viz/metasankey_population.png)
+![metasankey by region on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/metasankey_population.png)
 
-*An interactive version is available in [`example/population/viz/metasankey_K2-8.html`](example/population/viz/metasankey_K2-8.html).*
+*An interactive version is available in [`example/population/viz/metasankey_K2-8.html`](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/blob/main/example/population/viz/metasankey_K2-8.html).*
 
 Identical layout, one thing changed: a node is sliced into a metadata field's
 categories instead of into clusters.
@@ -141,7 +156,7 @@ fig, order, labels = ss.affinity_heatmap(Q, above=metadata, annotations=["group"
 ```
 
 <p align="center">
-  <img src="example/population/viz/affinity_K2-8.png" alt="Consensus affinity Q for the 1000 Genomes example, ordered by consensus cluster, with cluster and region strips" width="600">
+  <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/affinity_K2-8.png" alt="Consensus affinity Q for the 1000 Genomes example, ordered by consensus cluster, with cluster and region strips" width="600">
 </p>
 
 `Q` is the signed, chance-corrected co-membership: positive means two samples

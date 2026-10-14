@@ -1,0 +1,16 @@
+# Builds the documentation in docs/ and publishes it with GitLab Pages.
+# The site appears under Deploy > Pages once this job has run on main.
+
+pages:
+  stage: deploy
+  image: python:3.12-slim
+  script:
+    # The API reference is read from the docstrings, so the package and its
+    # dependencies are installed alongside Sphinx.
+    - pip install --quiet ".[docs]"
+    - sphinx-build -b html docs public
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

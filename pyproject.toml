@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "StripeSankey"
-version = "1.0.0.dev0"
+version = "0.4.0"
 description = "Fit a soft-clustering sweep across k and read it as one volume-accurate Sankey figure -- built for microbiome data, not limited to it"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -89,6 +89,7 @@ dev = [
 docs = [
     "sphinx",
     "sphinx-rtd-theme",
+    "myst-parser",
 ]
 
 [tool.hatch.version]

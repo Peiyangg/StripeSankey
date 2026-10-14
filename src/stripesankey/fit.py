@@ -27,6 +27,7 @@ from typing import Callable, Iterable
 import numpy as np
 import pandas as pd
 
+from . import mallet as _mallet
 from .cache import _ks_on_disk, _report_convergence, load_W
 from .prep import load_features, load_manifest
 
@@ -122,6 +123,14 @@ class _NMF:
 
 
 _W: dict = {}          # per-worker payload, set by _init_worker
+
+
+def _init_pool_worker(features_values, index, columns, backend, params):
+    _init_worker(features_values, index, columns, backend, params)
+    if backend == "lda_mallet":
+        # Pool workers only: with workers=1 this is the caller's process, not
+        # ours to rewire.
+        _mallet._exit_on_sigterm()
 
 
 def _init_worker(features_values, index, columns, backend, params):
@@ -274,8 +283,12 @@ def _fit_sklearn(k: int, seed: int, params: dict):
 def _fit_one(task):
     k, seed = task
     t0 = time.perf_counter()
-    fn = _fit_gensim if _W["backend"] == "lda_gensim" else _fit_sklearn
-    W, H, diag = fn(k, seed, _W["params"])
+    if _W["backend"] == "lda_gensim":
+        W, H, diag = _fit_gensim(k, seed, _W["params"])
+    elif _W["backend"] == "lda_mallet":
+        W, H, diag = _mallet._fit_mallet(k, seed, _W["params"], _W["X"])
+    else:
+        W, H, diag = _fit_sklearn(k, seed, _W["params"])
     diag["seconds"] = round(time.perf_counter() - t0, 3)
     return k, seed, W.astype(np.float32), H.astype(np.float32), diag
 
@@ -305,6 +318,19 @@ def _coherence(H: pd.DataFrame, texts, dictionary, topn=20):
 _FIT_BUDGET = {"max_passes": 1000, "iterations": 5000,
                "alpha": "auto", "eta": "auto"}
 
+#: MALLET's budget. `max_iter` is the ceiling on Gibbs sweeps, not their cost:
+#: the run stops as soon as the model has settled (see `mallet._fit_mallet`),
+#: which is checked from sweep 1500 on. Measured on HRD at k=2..10: 1550-1950
+#: sweeps across 27 fits, so 3000 leaves 1500 sweeps of headroom past the first
+#: check. The rest are MALLET's own flags with the old
+#: pipeline's values: `alpha` is MALLET's SumAlpha, and `optimize_interval=10`
+#: re-estimates alpha and beta every 10 sweeps once `optimize_burn_in` have run.
+_MALLET_BUDGET = {"max_iter": 3000, "alpha": 5.0, "beta": 0.01,
+                  "optimize_interval": 10, "optimize_burn_in": 200}
+
+#: Default `rel_tol` per backend: each is a ratio of a different quantity.
+_REL_TOL = {"lda_gensim": 1e-3, "lda_mallet": 5e-3}
+
 
 def _write_fit(res, k, seed, W, H, diag, features, lcs, diags, verbose):
     """Persist one fit as it lands, so a crash loses one k rather than the sweep."""
@@ -318,11 +344,18 @@ def _write_fit(res, k, seed, W, H, diag, features, lcs, diags, verbose):
         pd.Series(diag["topic_diff_series"], name="topic_diff"
                   ).rename_axis("pass").to_csv(
             os.path.join(ddir, f"topic_diff_{k}.csv"))
+    if diag.get("ll_series"):
+        ddir = os.path.join(res, "diagnostics")
+        os.makedirs(ddir, exist_ok=True)
+        pd.Series(diag.pop("ll_series"), name="ll_per_token"
+                  ).rename_axis("iteration").to_csv(os.path.join(ddir, f"ll_{k}.csv"))
     diag.update({"k": k, "seed": seed})
     diags.append(diag)
     if verbose:
-        print(f"  k={k:>3}  {diag['seconds']:6.1f}s  "
-              f"{diag.get('passes_run', '-')} passes  "
+        steps = (f"{diag['passes_run']} passes" if "passes_run" in diag
+                 else f"{diag['n_iter']} iterations" if diag.get("n_iter") is not None
+                 else "-")
+        print(f"  k={k:>3}  {diag['seconds']:6.1f}s  {steps}  "
               f"{'settled' if diag.get('converged') else 'NOT settled'}", flush=True)
 
 
@@ -330,8 +363,9 @@ def sweep(base_directory: str,
           k_range: Iterable[int] | None = None,
           *,
           implementation: str | Callable = "lda_gensim",
+          mallet: str | os.PathLike | None = None,
           random_state: int = 42,
-          rel_tol: float = 1e-3,
+          rel_tol: float | None = None,
           resolution: float = 0.0,
           noise_threshold: float = 0.0,
           workers: int | None = None,
@@ -362,17 +396,37 @@ def sweep(base_directory: str,
         base_directory: the folder ``prepare()`` wrote to; read and written.
         k_range: the k values to fit. Default: the k values already in
             ``results/W/``, so nothing is fitted.
-        implementation: ``'lda_gensim'``, ``'nmf'``, or a callable
-            ``(k, seed) -> estimator`` satisfying sklearn's decomposition
-            protocol (``fit_transform() -> W``, ``.components_ -> H``), which
-            is the same convention this package uses. Any callable works -- a
-            ``def`` in a notebook cell, a lambda, a closure -- because it is
-            sent to the worker processes by value. Checked before any work is
-            submitted.
+        implementation: ``'lda_gensim'``, ``'lda_mallet'``, ``'nmf'``, or a
+            callable ``(k, seed) -> estimator`` satisfying sklearn's
+            decomposition protocol (``fit_transform() -> W``,
+            ``.components_ -> H``), which is the same convention this package
+            uses. Any callable works -- a ``def`` in a notebook cell, a lambda,
+            a closure -- because it is sent to the worker processes by value.
+            Checked before any work is submitted.
+        mallet: for ``implementation='lda_mallet'`` only, and required by it:
+            MALLET's ``bin/mallet`` launcher, or the MALLET folder holding it.
+            MALLET is not bundled -- download it from
+            https://mimno.github.io/Mallet/ -- and needs Java on ``PATH``.
         random_state: the seed. One fit per k means this fixes the result.
-        rel_tol: a fit counts as settled when its final ``topic diff`` is below
+            MALLET reads a seed of 0 as "seed from the clock", so
+            ``lda_mallet`` takes 1 to 2**31 - 1.
+        rel_tol: when a fit counts as settled; default per backend.
+
+            ``lda_gensim`` (1e-3): its final ``topic diff`` is below
             ``rel_tol`` of its own peak -- scale-free, because the raw value
             depends on vocabulary size.
+
+            ``lda_mallet`` (5e-3): ``LL/token`` gained over the last 200
+            sweeps is below ``rel_tol`` of what the run has gained in total,
+            AND W has stopped drifting -- it is no further from the model 200
+            sweeps back than from the one 50 sweeps back, give or take 15%.
+            A Gibbs chain never stops moving, so this is "only the chain's own
+            noise is left". Checked every 50 sweeps from sweep 1500 on, so
+            every fit runs at least 1500 sweeps: a chain can sit in one state
+            for hundreds of sweeps and then jump to a better one, which no
+            test on its past can foresee. Two checks in a row must pass. The W
+            and H saved are the average of the last 200 sweeps (5
+            checkpoints), not a single draw.
 
             **The default is loose on purpose.** Measured over 450 fits at
             ``iterations=5000`` and a 150-pass budget, the ratio was tightly
@@ -397,11 +451,13 @@ def sweep(base_directory: str,
             out of any context where ``spawn`` cannot re-import the calling
             module -- a REPL, a piped script, some notebook setups.
         force: refit k values already on disk.
-        **fit_params: override the fitting budget (``max_passes``,
-            ``iterations``, ``alpha``, ``eta``). You should not need to. Both
-            limits are ceilings with an early exit, so they are set high and
-            each fit takes only as long as it needs; whether a ceiling was
-            reached is measured, not assumed.
+        **fit_params: override the fitting budget -- ``lda_gensim``:
+            ``max_passes``, ``iterations``, ``alpha``, ``eta``; ``lda_mallet``:
+            ``max_iter``, ``alpha``, ``beta``, ``optimize_interval``,
+            ``optimize_burn_in``. You should not need to. The limits are
+            ceilings with an early exit, so they are set high and each fit
+            takes only as long as it needs; whether a ceiling was reached is
+            measured, not assumed.
 
     .. important::
        Fits run in a process pool, and on macOS and Windows that means
@@ -427,13 +483,29 @@ def sweep(base_directory: str,
             implementation, "__name__", "callable")
     elif implementation == "lda_gensim":
         backend, factory, label = "lda_gensim", None, "lda_gensim"
+    elif implementation == "lda_mallet":
+        backend, factory, label = "lda_mallet", None, "lda_mallet"
     elif implementation == "nmf":
         backend, factory, label = "callable", _NMF(), "nmf"
     else:
         raise ValueError(
-            f"implementation={implementation!r}: expected 'lda_gensim', 'nmf', "
-            "or a callable (k, seed) -> estimator"
+            f"implementation={implementation!r}: expected 'lda_gensim', "
+            "'lda_mallet', 'nmf', or a callable (k, seed) -> estimator"
         )
+    if backend == "lda_mallet":
+        if mallet is None:
+            raise TypeError("implementation='lda_mallet' needs mallet=: the path "
+                            "to MALLET's bin/mallet (https://mimno.github.io/Mallet/)")
+        mallet = _mallet._launcher(mallet)
+        if not (isinstance(random_state, (int, np.integer))
+                and 1 <= random_state <= 2**31 - 1):
+            raise ValueError(
+                f"random_state={random_state!r}: lda_mallet needs an integer in "
+                "1..2**31-1. MALLET reads 0 as 'seed from the clock', which would "
+                "make the sweep unrepeatable.")
+    elif mallet is not None:
+        raise TypeError(f"mallet= is only used by implementation='lda_mallet', "
+                        f"not {label!r}")
 
     if factory is not None:
         # Sent to the workers BY VALUE. Plain pickle sends a function by name,
@@ -451,11 +523,14 @@ def sweep(base_directory: str,
                 "picklable: create open files, locks or connections inside it."
             ) from exc
 
-    unknown = set(fit_params) - set(_FIT_BUDGET)
+    defaults = _MALLET_BUDGET if backend == "lda_mallet" else _FIT_BUDGET
+    unknown = set(fit_params) - set(defaults)
     if unknown:
         raise TypeError(f"unexpected fit_params {sorted(unknown)}; "
-                        f"overridable: {sorted(_FIT_BUDGET)}")
-    budget = {**_FIT_BUDGET, **fit_params}
+                        f"overridable: {sorted(defaults)}")
+    budget = {**defaults, **fit_params}
+    if rel_tol is None:
+        rel_tol = _REL_TOL.get(backend, _REL_TOL["lda_gensim"])
     params = {**budget, "rel_tol": rel_tol, "factory": factory}
 
     todo = k_list if force else [k for k in k_list if k not in on_disk]
@@ -470,6 +545,13 @@ def sweep(base_directory: str,
             ) from None
         for sub in ("W", "H"):
             os.makedirs(os.path.join(res, sub), exist_ok=True)
+        if backend == "lda_mallet":
+            # Once, here, before any worker exists: every k reads the same
+            # imported corpus, and it is reused until features.csv changes.
+            logdir = os.path.join(res, "diagnostics")
+            os.makedirs(logdir, exist_ok=True)
+            params.update(mallet=mallet, logdir=logdir, corpus=_mallet._corpus(
+                base_directory, features.to_numpy(), mallet, verbose=verbose))
     if verbose:
         skipped = sorted(set(k_list) - set(todo))
         if todo:
@@ -503,7 +585,7 @@ def sweep(base_directory: str,
                    "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS"):
             os.environ.setdefault(_v, "1")
         with ProcessPoolExecutor(
-            max_workers=workers, initializer=_init_worker,
+            max_workers=workers, initializer=_init_pool_worker,
             initargs=(features.to_numpy(), features.index, features.columns,
                       backend, params),
         ) as pool:
@@ -547,7 +629,8 @@ def sweep(base_directory: str,
     conv = {str(d["k"]): {q: d.get(q) for q in
                           ("converged", "topic_diff_final", "topic_diff_ratio",
                            "docs_converged_frac", "passes_run", "n_iter",
-                           "max_iter", "perplexity", "reconstruction_err",
+                           "max_iter", "ll_ratio", "w_drift", "averaged",
+                           "ll_final", "perplexity", "reconstruction_err",
                            "seconds") if d.get(q) is not None}
             for d in diags}
 
@@ -564,8 +647,9 @@ def sweep(base_directory: str,
             "level": manifest.get("level"),
             "k_list": k_list,
             "random_state": random_state,
-            "params": {**budget, "rel_tol": rel_tol},
-            "left_axis": ("perplexity" if backend == "lda_gensim"
+            "params": {**budget, "rel_tol": rel_tol,
+                       **({"mallet": mallet} if backend == "lda_mallet" else {})},
+            "left_axis": ("perplexity" if backend in ("lda_gensim", "lda_mallet")
                           else "reconstruction_err"),
         }
     else:

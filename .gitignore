@@ -1,2 +1,23 @@
 # local API test notebooks, their data and outputs
 test/
+
+# documentation build output (docs/_build locally, public/ in GitLab CI)
+docs/_build/
+public/
+
+# macOS folder metadata
+.DS_Store
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# marimo session caches
+__marimo__/
+
+# build output (uv build / python -m build)
+dist/
+
+# design_process: only the figures are public
+design_process/*
+!design_process/visuals/

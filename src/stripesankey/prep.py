@@ -9,6 +9,7 @@ orientation.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -18,6 +19,8 @@ from typing import Iterable
 
 import numpy as np
 import pandas as pd
+
+from .mallet import write_corpus
 
 
 _FORMAT = """Expected format:
@@ -170,7 +173,8 @@ def prepare(base_directory: str,
     input column.
 
     Writes ``intermediate/{features.csv, feature_annotation.csv, manifest.json}``
-    and returns the manifest. One folder holds one preprocessing, so the
+    -- plus ``intermediate/mallet/corpus.txt``, the same table as the document
+    file MALLET reads -- and returns the manifest. One folder holds one preprocessing, so the
     feature table is always ``features.csv`` and the manifest records which
     level produced it. Preparing the folder again replaces it. If the feature
     table changed -- another level, other samples -- ``results/`` is removed
@@ -223,6 +227,8 @@ def prepare(base_directory: str,
             changed = f.read() != table
         if changed:
             shutil.rmtree(res)
+            # The MALLET corpus is this table as tokens, imported for the old one.
+            shutil.rmtree(os.path.join(inter, "mallet"), ignore_errors=True)
             warnings.warn(
                 f"the feature table in {base_directory} changed (level={level!r}), "
                 "so results/ was removed: those fits describe the old table. "
@@ -232,6 +238,9 @@ def prepare(base_directory: str,
 
     with open(fpath, "wb") as f:
         f.write(table)
+    # The same table as a MALLET document file, for sweep(implementation=
+    # "lda_mallet"). Skipped when it already matches; see mallet.write_corpus.
+    write_corpus(base_directory, features.to_numpy(), hashlib.sha256(table).hexdigest())
     feature_annotation.to_csv(os.path.join(inter, "feature_annotation.csv"))
     with open(os.path.join(inter, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)

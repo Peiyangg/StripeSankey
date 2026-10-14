@@ -26,7 +26,7 @@ import numpy as np
 import pandas as pd
 
 __all__ = ["load_W", "load_H", "load_run_info", "load_consensus",
-           "load_topic_diff", "convergence_report", "unsettled_k"]
+           "load_topic_diff", "load_ll", "convergence_report", "unsettled_k"]
 
 
 def load_W(base_directory: str,
@@ -95,13 +95,27 @@ def _report_convergence(run_info: dict, *, verbose: bool = True) -> list[int]:
         if ok is False:
             bad.append(int(k))
 
-    # The two backends report convergence through different quantities, so the
+    # The backends report convergence through different quantities, so the
     # table shows whichever ones exist rather than a column of dashes.
     gensim_style = any("passes_run" in d for _k, d, _ok in rows)
+    mallet_style = any("ll_ratio" in d for _k, d, _ok in rows)
 
     if verbose and rows:
         params = run_info.get("params", {})
-        if gensim_style:
+        if mallet_style:
+            print(f"\n[sweep] convergence (rel_tol={params.get('rel_tol')}, "
+                  f"max_iter={params.get('max_iter')}):")
+            print(f"  {'k':>4} {'n_iter':>7} {'ll_ratio':>10} {'w_drift':>8} "
+                  f"{'perplexity':>11}  verdict")
+            for k, d, ok in rows:
+                ni, ra, px = d.get("n_iter"), d.get("ll_ratio"), d.get("perplexity")
+                dr = d.get("w_drift")
+                print(f"  {k:>4} {('-' if ni is None else ni):>7} "
+                      f"{('-' if ra is None else f'{ra:.2e}'):>10} "
+                      f"{('-' if dr is None else f'{dr:.2f}'):>8} "
+                      f"{('-' if px is None else f'{px:.1f}'):>11}  "
+                      f"{'settled' if ok else 'NOT settled'}")
+        elif gensim_style:
             print(f"\n[sweep] convergence (rel_tol={params.get('rel_tol')}, "
                   f"max_passes={params.get('max_passes')}):")
             print(f"  {'k':>4} {'passes':>7} {'docs_conv':>10} {'diff_ratio':>11}  verdict")
@@ -147,6 +161,17 @@ def load_topic_diff(base_directory: str, k: int) -> pd.Series:
         index_col=0).squeeze("columns")
 
 
+def load_ll(base_directory: str, k: int) -> pd.Series:
+    """MALLET's own ``LL/token``, every 10 sweeps, for this k's fit.
+
+    Rising toward a plateau; where it ends is where the run was stopped. The
+    tail is what shows whether the plateau was real -- flat, or still climbing.
+    """
+    return pd.read_csv(
+        os.path.join(base_directory, "results", "diagnostics", f"ll_{k}.csv"),
+        index_col=0).squeeze("columns")
+
+
 def convergence_report(base_directory: str) -> pd.DataFrame:
     """
     One row per k: did the fit settle, and was each ceiling enough?
@@ -163,6 +188,14 @@ def convergence_report(base_directory: str) -> pd.DataFrame:
         the ceiling (``max_passes``) the fit ran out of budget; well below it,
         the fit settled on its own and the number is what this data costs --
         measured 60-332 on one real table, 43-53 on another.
+    ``ll_ratio``, ``w_drift``
+        MALLET only, and together its stopping condition. ``ll_ratio``:
+        ``LL/token`` gained over the last 200 sweeps, as a fraction of what the
+        run gained in total; under ``rel_tol`` once the likelihood is flat.
+        ``w_drift``: how far W is from the model 200 sweeps back, over how far
+        it is from the one 50 sweeps back; near 1 once W only jitters, larger
+        while it is still moving. Like ``diff_ratio``, both carry information
+        mainly when ``settled`` is False.
     ``diff_ratio``
         How much the topics moved on the final pass as a fraction of the
         largest move the fit ever made. Note this is also the **stopping
@@ -184,9 +217,11 @@ def convergence_report(base_directory: str) -> pd.DataFrame:
             "passes": d.get("passes_run"),
             "docs_converged": d.get("docs_converged_frac"),
             "diff_ratio": d.get("topic_diff_ratio"),
-            # an sklearn estimator's own route
+            # an sklearn estimator's own route, and MALLET's
             "n_iter": d.get("n_iter"),
             "max_iter": d.get("max_iter"),
+            "ll_ratio": d.get("ll_ratio"),
+            "w_drift": d.get("w_drift"),
             "loss": d.get("reconstruction_err"),
             "seconds": d.get("seconds"),
         })
