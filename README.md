@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/StripeSankey_logo.png" alt="StripeSankey" width="420">
+  <img src="https://raw.githubusercontent.com/Peiyangg/StripeSankey/main/docs/StripeSankey_logo.png" alt="StripeSankey" width="420">
 </p>
 
 
@@ -17,7 +17,7 @@ The pipeline supports LDA and NMF, and takes three tables: a **count matrix**, a
 
 The pipeline also lets users bring their own sweep, computed elsewhere (see *Fit your customized models*).
 
-![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/docs/methodology.png)
+![From a count table to the StripeSankey: one model per k, a chance-corrected consensus across k, and the figure coloured by it](https://raw.githubusercontent.com/Peiyangg/StripeSankey/main/docs/methodology.png)
 
 ```bash
 pip install stripesankey
@@ -115,7 +115,7 @@ If your model runs in another language, such as R, or in a well-established tool
 ```python
 ss.sweep(base)
 ```
-[`example/population`](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/tree/main/example/population) does this with [pong](https://github.com/ramachandran-lab/pong)'s precomputed ADMIXTURE results for the 1000 Genomes (K = 2…8).
+[`example/population`](https://github.com/Peiyangg/StripeSankey/tree/main/example/population) does this with [pong](https://github.com/ramachandran-lab/pong)'s precomputed ADMIXTURE results for the 1000 Genomes (K = 2…8).
 
 ## Plotting
 
@@ -127,9 +127,9 @@ Both figures read the sweep from `base`, wherever it was fitted.
 fig = ss.stripesankey(base, metadata_df=metadata, hover_field=["group"])
 ```
 
-![stripesankey on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/stripesankey_population.png)
+![stripesankey on the 1000 Genomes example, K=2…8](https://raw.githubusercontent.com/Peiyangg/StripeSankey/main/example/population/viz/stripesankey_population.png)
 
-*An interactive version is available in [`example/population/viz/stripesankey_K2-8.html`](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/blob/main/example/population/viz/stripesankey_K2-8.html).*
+*An interactive version is available in [`example/population/viz/stripesankey_K2-8.html`](https://github.com/Peiyangg/StripeSankey/blob/main/example/population/viz/stripesankey_K2-8.html).*
 
 Click a band, a ribbon or a cluster chip to trace those samples across every
 `k`. Click a `K =` label to focus that column — it restacks by the first
@@ -141,9 +141,9 @@ Click a band, a ribbon or a cluster chip to trace those samples across every
 fig = ss.metasankey(base, metadata_df=metadata, hover_field=["group"])
 ```
 
-![metasankey by region on the 1000 Genomes example, K=2…8](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/metasankey_population.png)
+![metasankey by region on the 1000 Genomes example, K=2…8](https://raw.githubusercontent.com/Peiyangg/StripeSankey/main/example/population/viz/metasankey_population.png)
 
-*An interactive version is available in [`example/population/viz/metasankey_K2-8.html`](https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/blob/main/example/population/viz/metasankey_K2-8.html).*
+*An interactive version is available in [`example/population/viz/metasankey_K2-8.html`](https://github.com/Peiyangg/StripeSankey/blob/main/example/population/viz/metasankey_K2-8.html).*
 
 Identical layout, one thing changed: a node is sliced into a metadata field's
 categories instead of into clusters.
@@ -156,7 +156,7 @@ fig, order, labels = ss.affinity_heatmap(Q, above=metadata, annotations=["group"
 ```
 
 <p align="center">
-  <img src="https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/raw/main/example/population/viz/affinity_K2-8.png" alt="Consensus affinity Q for the 1000 Genomes example, ordered by consensus cluster, with cluster and region strips" width="600">
+  <img src="https://raw.githubusercontent.com/Peiyangg/StripeSankey/main/example/population/viz/affinity_K2-8.png" alt="Consensus affinity Q for the 1000 Genomes example, ordered by consensus cluster, with cluster and region strips" width="600">
 </p>
 
 `Q` is the signed, chance-corrected co-membership: positive means two samples

@@ -73,10 +73,10 @@ dependencies = [
 requires-python = ">=3.9"
 
 [project.urls]
-Homepage = "https://gitlab.kuleuven.be/aida-lab/public/StripeSankey"
-Documentation = "https://gitlab.kuleuven.be/aida-lab/public/StripeSankey#readme"
-Repository = "https://gitlab.kuleuven.be/aida-lab/public/StripeSankey.git"
-"Bug Tracker" = "https://gitlab.kuleuven.be/aida-lab/public/StripeSankey/-/issues"
+Homepage = "https://github.com/Peiyangg/StripeSankey"
+Documentation = "https://github.com/Peiyangg/StripeSankey#readme"
+Repository = "https://github.com/Peiyangg/StripeSankey.git"
+"Bug Tracker" = "https://github.com/Peiyangg/StripeSankey/issues"
 
 [project.optional-dependencies]
 dev = [
