@@ -19,7 +19,7 @@ Two views, one layout::
 at a given height in one render is the same bar in the other.
 """
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 # --- the pipeline: prepare -> sweep -> read it back -> draw ---------------
 from .prep import validate_tables, prepare, load_manifest, load_features

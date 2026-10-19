@@ -151,6 +151,20 @@ def _fields(hover_field):
     return [str(f) for f in hover_field][:3]
 
 
+def _annotations(lc_annotations) -> dict:
+    """``{k: {lc: [(label, weight), ...]}}`` -> the widget's JSON shape.
+
+    Keys become strings and every row ``[label, weight]``; the rows keep the
+    caller's order and number -- choosing and filtering them is the caller's
+    job, since only the caller knows what they mean.
+    """
+    if not lc_annotations:
+        return {}
+    return {str(k): {str(lc): [[str(label), float(weight)] for label, weight in rows]
+                     for lc, rows in per_k.items()}
+            for k, per_k in lc_annotations.items()}
+
+
 def _load_sweep(base_directory, clusters, exclude_unsettled):
     """
     ``(W_by_k, clusters)`` -- every k of the sweep in ``base_directory``, and
@@ -243,6 +257,9 @@ def stripesankey(base_directory: str, *,
                  node_width: int | None = None,
                  cluster_colors: Mapping | None = None,
                  cluster_legend: Mapping | None = None,
+                 lc_annotations: Mapping | None = None,
+                 annotation_label: str = "",
+                 component_label: str = "LC",
                  figsize=(3, 4),
                  dpi: int = 100,
                  **kwargs) -> StripeSankeyInline:
@@ -272,6 +289,16 @@ def stripesankey(base_directory: str, *,
             :func:`coherent_cluster_palette` and :func:`dendrogram_layout` --
             or the legend and the ribbons can disagree about which clusters are
             alike.
+        lc_annotations: ``{k: {lc: [(label, weight), ...]}}``, best first --
+            e.g. the top features of each LC, computed by the caller (the
+            library never sees features). An LC with rows gets a two-part
+            caption, ``LC3 · Prevotella`` (its first row's name): clicking
+            ``LC3`` selects the whole node, clicking the name opens a popup
+            listing the rows and selects nothing. The rows are shown as given.
+        annotation_label: what the annotations are ("Genus"), named in the
+            name's tooltip and the popup heading ("top 5 Genus").
+        component_label: what an LC is called in captions and tooltips
+            (default "LC"; e.g. "MC" for microbial components).
     """
     W_by_k, clusters = _load_sweep(base_directory, clusters, exclude_unsettled)
     data, shown, fields, meta, height, lineage = _common(
@@ -292,6 +319,9 @@ def stripesankey(base_directory: str, *,
         node_width=int(node_width or 0),
         cluster_colors={str(k): v for k, v in (cluster_colors or {}).items()},
         cluster_legend=dict(cluster_legend or {}),
+        lc_annotations=_annotations(lc_annotations),
+        annotation_label=str(annotation_label or ""),
+        component_label=str(component_label or "LC"),
         height=height, **kwargs)
 
 
@@ -302,6 +332,9 @@ def metasankey(base_directory: str, *,
                k_list: Iterable[int] | None = None,
                exclude_unsettled: bool = True,
                high_threshold: float = 0.5,
+               lc_annotations: Mapping | None = None,
+               annotation_label: str = "",
+               component_label: str = "LC",
                figsize=(3, 4),
                dpi: int = 100,
                **kwargs) -> StripeSankeyInline:
@@ -315,7 +348,8 @@ def metasankey(base_directory: str, *,
     ``metadata_df`` and ``hover_field`` are required: the first field is what
     the nodes and flows are coloured by. ``clusters`` is still used, but only to
     order the columns and the category stack the way the cluster view orders
-    them. ``base_directory``, ``k_list`` and ``exclude_unsettled`` are as in
+    them. ``base_directory``, ``k_list``, ``exclude_unsettled``,
+    ``lc_annotations``, ``annotation_label`` and ``component_label`` are as in
     :func:`stripesankey`.
     """
     if metadata_df is None or not _fields(hover_field):
@@ -328,4 +362,7 @@ def metasankey(base_directory: str, *,
         sankey_data=data, mode="meta_sankey", k_list=shown,
         metadata=meta, hover_field=fields,
         high_threshold=float(high_threshold),
+        lc_annotations=_annotations(lc_annotations),
+        annotation_label=str(annotation_label or ""),
+        component_label=str(component_label or "LC"),
         height=height, **kwargs)

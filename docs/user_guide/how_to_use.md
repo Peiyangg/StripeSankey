@@ -102,6 +102,25 @@ heatmap, order, labels = ss.affinity_heatmap(Q, above=metadata, annotations=["gr
   every *k*.
 - **Click a `K =` label** to focus that column. It restacks by the first
   `hover_field`.
+- **Click an `LC` caption** to select every sample in that node.
+
+### Annotating the components
+
+Pass what each LC *is* -- for example its top features -- and every caption
+gets a second part:
+
+```python
+annotations = {5: {3: [("Prevotella", 0.17), ("Lactobacillus", 0.07)]}}  # {k: {lc: rows}}
+fig = ss.stripesankey(base, lc_annotations=annotations,
+                      annotation_label="Genus", component_label="MC")
+```
+
+The caption under K = 5, LC 3 then reads `MC3 · Prevotella`. Clicking `MC3`
+still selects the node; clicking `Prevotella` opens a popup ("MC3 · top 2
+Genus") with all the rows you passed, and leaves the selection alone.
+StripeSankey shows the rows exactly as given -- which features to list, and
+which to leave out (e.g. unclassified taxa), is up to you. `metasankey` takes
+the same three arguments.
 
 The selection comes back to Python:
 

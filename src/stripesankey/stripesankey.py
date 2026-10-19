@@ -54,7 +54,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
       const full = sel.text();
       if (__textW(sel, px) <= maxW) return;
       let s = full;
-      while (s.length > 1 && __textW(sel, px) > maxW) { s = s.slice(0, -1); sel.text(s + "\\u2026"); }
+      while (s.length > 1 && __textW(sel, px) > maxW) { s = s.slice(0, -1); sel.text(s + "\u2026"); }
       sel.append("title").text(full);        // after .text(), which clears children
     }
     function __shrinkText(sel, maxW, maxPx, minPx) {
@@ -135,6 +135,84 @@ class StripeSankeyInline(anywidget.AnyWidget):
       node.style.top  = Math.max(4, Math.min(y, boxH - h - 4)) + "px";
     }
 
+    // ---- per-component annotations, supplied by the caller ----------------
+    // `lc_annotations` = {"<k>": {"<lc>": [[label, weight], ...]}}, best first.
+    // The library never reads a feature table: what the rows are (genera,
+    // genes, words) and which ones are left out is the caller's business.
+    // `annotation_label` says what they are ("Genus"); `component_label` what
+    // a component is called ("LC" by default). A component WITH rows gets a
+    // two-part caption (`__twoPartCaption`): its component part keeps the
+    // whole-node selection every caption has, its annotation part opens a
+    // pinned popup listing the rows and leaves the selection alone. Shared by
+    // cluster_prox and meta_sankey.
+    function __annotations(el, model, width, height) {
+        const ANN = model.get("lc_annotations") || {};
+        const LABEL = model.get("annotation_label") || "";
+        const COMP = model.get("component_label") || "LC";
+        const rowsOf = (k, lc) => ((ANN[String(k)] || {})[String(lc)]) || [];
+        const panel = d3.select(el).append("div").attr("class", "__annot")
+            .style("position", "absolute").style("display", "none")
+            .style("background", "#111").style("color", "#fff")
+            .style("padding", "10px 13px").style("border-radius", "8px")
+            .style("box-shadow", "0 4px 16px rgba(0,0,0,.35)")
+            .style("font", "14px sans-serif").style("z-index", 20)
+            .on("click", e => e.stopPropagation());    // a click inside never clears the selection
+        let shown = null;                              // "k:lc" of the open popup
+        const hide = () => { panel.style("display", "none"); shown = null; };
+        function toggle(k, lc, e) {
+            const rows = rowsOf(k, lc);
+            if (!rows.length) return;
+            const key = k + ":" + lc;
+            if (shown === key) { hide(); return; }     // re-click = dismiss
+            shown = key;
+            const mx = d3.max(rows, r => +r[1]) || 1, BAR = 150;
+            let html = `<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">`
+                     + `<b style="font-size:15px">K${k} ${COMP}${lc}</b>`
+                     + `<span style="opacity:.6">top ${rows.length}${LABEL ? " " + LABEL : ""}</span>`
+                     + `<span class="__annotclose" style="margin-left:auto;cursor:pointer;opacity:.6;font-size:16px">\u00d7</span></div>`;
+            rows.forEach(([name, w]) => {
+                const bw = Math.max(3, (+w / mx) * BAR);
+                html += `<div style="display:flex;align-items:center;gap:9px;margin:5px 0;line-height:1">`
+                      +  `<span style="display:inline-block;width:160px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${name}">${name}</span>`
+                      +  `<span style="display:inline-block;height:15px;width:${bw.toFixed(0)}px;background:#5b9bd5;border-radius:3px"></span>`
+                      +  `<span style="opacity:.85;white-space:nowrap">${(+w).toFixed(3)}</span></div>`;
+            });
+            panel.html(html).style("display", "block");
+            __placeFloat(panel.node(), e, width, height);  // flip/clamp into the widget box
+            panel.select(".__annotclose").on("click", ev => { ev.stopPropagation(); hide(); });
+        }
+        return {
+            COMP, hide, toggle,
+            has: (k, lc) => rowsOf(k, lc).length > 0,
+            // the annotation part's text: the top row's name alone -- what it is
+            // (`annotation_label`) is said in the tooltip and the popup heading
+            headline: (k, lc) => { const r = rowsOf(k, lc); return r.length ? String(r[0][0]) : ""; },
+            tip: (k, lc) => { const r = rowsOf(k, lc); if (!r.length) return "";
+                return `<b>K${k} ${COMP}${lc}</b> \u00b7 top ${LABEL || "annotation"}: <b>${r[0][0]}</b> (${(+r[0][1]).toFixed(3)})`
+                     + `<br><span style="opacity:.7">click for the top ${r.length}${LABEL ? " " + LABEL : ""}</span>`; },
+        };
+    }
+
+    // Two-part caption under a node: "{COMP}{lc}" (bold -- the whole-node
+    // handle) then "\u00b7 {headline}" (lighter -- the annotation handle), the
+    // pair centred on x within `maxW`. The headline gives way first (clipped
+    // with an ellipsis, full text in a <title>); when not even a few letters
+    // fit it becomes an "\u24d8". Returns { comp, ann } for the caller to wire.
+    function __twoPartCaption(parent, x, y, compText, annText, maxW, fill) {
+        const grp = parent.append("g");
+        const comp = grp.append("text").attr("x", 0).attr("y", y)
+            .style("font-size", "12px").style("font-weight", "bold").style("fill", fill).text(compText);
+        const compW = __textW(comp, 12), GAP = 4;
+        const ann = grp.append("text").attr("x", compW + GAP).attr("y", y)
+            .style("font-size", "11px").style("font-weight", "normal")
+            .style("fill", fill === "#333" ? "#6b7280" : fill).text("\u00b7 " + annText);
+        const room = maxW - compW - GAP;
+        if (room < 28) ann.text("\u24d8");
+        else __clipText(ann, room, 11);
+        grp.attr("transform", `translate(${x - (compW + GAP + __textW(ann, 11)) / 2},0)`);
+        return { comp, ann };
+    }
+
     function render({ model, el }) {
         el.innerHTML = '';
 
@@ -194,6 +272,9 @@ class StripeSankeyInline(anywidget.AnyWidget):
             model.on("change:cluster_colors", rerun);
             model.on("change:cluster_legend", rerun);
             model.on("change:column_labels", rerun);
+            model.on("change:lc_annotations", rerun);
+            model.on("change:annotation_label", rerun);
+            model.on("change:component_label", rerun);
             return;
         }
 
@@ -214,6 +295,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
             model.on("change:width", rerun);
             model.on("change:height", rerun);
             model.on("change:cluster_colors", rerun);
+            model.on("change:component_label", rerun);
             return;
         }
 
@@ -227,6 +309,9 @@ class StripeSankeyInline(anywidget.AnyWidget):
             model.on("change:probability_thresholds", rerun);
             model.on("change:metadata", rerun);
             model.on("change:hover_field", rerun);
+            model.on("change:lc_annotations", rerun);
+            model.on("change:annotation_label", rerun);
+            model.on("change:component_label", rerun);
             return;
         }
 
@@ -856,6 +941,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
         const HFIELDS = (Array.isArray(_hf) ? _hf : (_hf ? [_hf] : []))
             .map(String).filter(Boolean).slice(0, 3);
         const HFIELD0 = HFIELDS[0] || "";                   // first field (focus mode)
+        const COMP = model.get("component_label") || "LC";  // what a component is called
 
         // gradient: "" (default) keeps the OKLCH hue-lineage strategy; any CSS
         // colour switches to a single-hue light->dark ramp over the SAME
@@ -1062,6 +1148,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
             .style("font", "16px sans-serif").style("z-index", 10);
         const showTip = (html, e) => { tt.html(html).style("opacity", 1); __placeFloat(tt.node(), e, width, height); };
         const hideTip = () => tt.style("opacity", 0);
+        const ANN = __annotations(el, model, width, height);   // caller-supplied annotations
 
         // Which consensus clusters a set of samples belongs to — the mirror of
         // metaComp(), so the focused (metadata) view can be read back into the
@@ -1123,7 +1210,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
             const cats = catOrder(field).filter(c => cnt[c]);
             const Y0 = height - legendH + 18;
             group.append("text").attr("x", m.l).attr("y", Y0).style("font", "bold 15px sans-serif").style("fill", "#111")
-                .text(`${field}  \\u00b7  ${__colLabel(fk)} (${sids.length} samples)`);
+                .text(`${field}  \u00b7  ${__colLabel(fk)} (${sids.length} samples)`);
             let x = m.l, y = Y0 + 28; const rowH = 26, sw = 16;
             cats.forEach(cat => {
                 const label = `${cat} (${cnt[cat]})`, wpx = 30 + label.length * 8.4;
@@ -1147,7 +1234,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
                 topG.append("text").attr("x", m.l + colX(String(k))).attr("y", 20).attr("text-anchor", "middle")
                     .style("font-size", "16px").style("font-weight", "bold").style("fill", dim ? "#bbb" : "#000")
                     .style("cursor", "pointer").style("text-decoration", isF ? "underline" : "none").text(__colLabel(k))
-                    .on("click", function (e) { e.stopPropagation(); hideTip();
+                    .on("click", function (e) { e.stopPropagation(); hideTip(); ANN.hide();
                         focusK = (focusK === k) ? null : k; sel = null; pushSelection(); draw(); });
                 // the optional qualifier line, shrunk to its own column's width so
                 // a long one cannot run into its neighbour
@@ -1173,7 +1260,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
                     const fcnt = {}; fsids.forEach(s => { const key = valOf(s, HFIELD0); fcnt[key] = (fcnt[key] || 0) + 1; });
                     const fcats = catOrder(HFIELD0).filter(c => fcnt[c]);
                     drawLeftMetaLegend(leftLegendG, HFIELD0,
-                        `${__colLabel(focusK)} \\u00b7 ${fsids.length} samples`,
+                        `${__colLabel(focusK)} \u00b7 ${fsids.length} samples`,
                         `click "${__colLabel(focusK)}" to exit`,
                         fcnt, fcats, fieldColor, 12, m.t, LEGEND_W, ih);
                 } else {
@@ -1181,7 +1268,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
                         pick, onPickCluster,
                         (cid, e) => { const sids = SAMPLES.filter(s => clOf(s) === cid);
                             const lf = (CLEG.leaves || []).find(l => +l.id === cid);
-                            showTip(`<b>${(lf && lf.label) || ("C" + cid)}</b> \\u00b7 ${sids.length} samples`
+                            showTip(`<b>${(lf && lf.label) || ("C" + cid)}</b> \u00b7 ${sids.length} samples`
                                 + metaComp(sids, HFIELD0 ? [HFIELD0] : []), e); },
                         hideTip);
                 }
@@ -1190,7 +1277,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
             } else {
                 drawHorizontalLineageLegend(legendG, LIN, lineageColor, m.l, height - legendH,
                     width - m.l - m.r, legendH - 8, SINGLE, pick, onPickCluster,
-                    `across all candidate models  \\u00b7  ${SAMPLES.length} samples, all of them  \\u00b7  ribbon width = samples`);
+                    `across all candidate models  \u00b7  ${SAMPLES.length} samples, all of them  \u00b7  ribbon width = samples`);
             }
 
             // Traced sub-ribbons land exactly on the highlighted part of the node.
@@ -1208,8 +1295,8 @@ class StripeSankeyInline(anywidget.AnyWidget):
                     .attr("fill", lineageColor(f.g)).attr("opacity", base).style("cursor", "pointer")
                     .attr("stroke", SINGLE ? "#fff" : "none").attr("stroke-width", SINGLE ? 0.7 : 0)
                     .style("pointer-events", focused ? "none" : "auto")
-                    .on("mousemove", e => showTip(`K${f.ka} LC${f.a} \\u2192 K${f.kb} LC${f.b}`
-                        + `<br><b>${+f.g === -1 ? "noise (unclustered)" : "cluster C" + f.g}</b> \\u00b7 ${f.count} samples`
+                    .on("mousemove", e => showTip(`K${f.ka} ${COMP}${f.a} \u2192 K${f.kb} ${COMP}${f.b}`
+                        + `<br><b>${+f.g === -1 ? "noise (unclustered)" : "cluster C" + f.g}</b> \u00b7 ${f.count} samples`
                         + (hit ? `<br><b>traced here: ${hit}</b>` : "") + metaComp(f.sids), e))
                     .on("mouseleave", hideTip)
                     .on("mouseover", function () { d3.select(this).attr("opacity", Math.max(base, 0.75)); })
@@ -1247,12 +1334,12 @@ class StripeSankeyInline(anywidget.AnyWidget):
                         .style("pointer-events", away ? "none" : "auto")
                         .on("mouseleave", hideTip);
                     if (useMeta) {
-                        r.on("mousemove", e => showTip(`<b>K${n.k} LC${n.mc}</b> \\u00b7 ${n.total} samples`
+                        r.on("mousemove", e => showTip(`<b>K${n.k} ${COMP}${n.mc}</b> \u00b7 ${n.total} samples`
                             + `<br>${HFIELD0}: <b>${s.cat}</b> ${s.sids.length}`
                             + ` (${Math.round(s.sids.length / n.total * 100)}%)` + clComp(s.sids), e));
                     } else {
                         const cname = +s.group === -1 ? "<b>noise</b> (unclustered)" : `cluster <b>C${s.group}</b>`;
-                        r.on("mousemove", e => showTip(`<b>K${n.k} LC${n.mc}</b> \\u00b7 ${n.total} samples`
+                        r.on("mousemove", e => showTip(`<b>K${n.k} ${COMP}${n.mc}</b> \u00b7 ${n.total} samples`
                             + `<br>${cname}: ${s.sids.length} (${Math.round(s.sids.length / n.total * 100)}%)`
                             + (hit ? `<br><b>traced here: ${hit}</b>` : "") + metaComp(s.sids), e))
                          .on("click", function (e) { e.stopPropagation(); hideTip();
@@ -1277,27 +1364,45 @@ class StripeSankeyInline(anywidget.AnyWidget):
                 // The caption is the WHOLE-NODE handle. The node body is already
                 // spoken for -- each band there selects its own cluster -- so the
                 // label under it, which names the node rather than any one band,
-                // is the natural place to ask for all of it.
-                if (CAP_H) content.append("text").attr("x", n.x).attr("y", n.top + n.h + 12)
-                    .attr("text-anchor", "middle").style("font-size", "12px").style("font-weight", "bold")
-                    .style("fill", capFill)
-                    .style("cursor", away ? "default" : "pointer")
+                // is the natural place to ask for all of it. With annotations it
+                // has a second part, which opens them and selects nothing.
+                const wireComp = s => s.style("cursor", away ? "default" : "pointer")
                     .style("pointer-events", away ? "none" : "auto")
-                    .on("mousemove", e => showTip(`<b>K${n.k} LC${n.mc}</b> \\u00b7 ${n.total} samples`
+                    .on("mousemove", e => showTip(`<b>K${n.k} ${COMP}${n.mc}</b> \u00b7 ${n.total} samples`
                         + `<br><span style="opacity:.7">click to select the whole node</span>`
                         + clComp(n.samples), e))
                     .on("mouseleave", hideTip)
-                    .on("click", function (e) { e.stopPropagation(); hideTip(); selectWholeNode(n); })
-                    .text(`LC${n.mc}`);
-                else if (n.h >= 9) content.append("text").attr("x", n.x).attr("y", n.top + n.h / 2 + 3)
-                    .attr("text-anchor", "middle").style("font-size", "9px").style("font-weight", "bold")
-                    .style("fill", "#fff").style("stroke", "rgba(0,0,0,.55)").style("stroke-width", "2px")
-                    .style("paint-order", "stroke").style("pointer-events", "none").text(n.mc);
+                    .on("click", function (e) { e.stopPropagation(); hideTip(); selectWholeNode(n); });
+                const wireAnn = s => s.style("cursor", away ? "default" : "pointer")
+                    .style("pointer-events", away ? "none" : "auto")
+                    .on("mousemove", e => showTip(ANN.tip(n.k, n.mc), e))
+                    .on("mouseleave", hideTip)
+                    .on("click", function (e) { e.stopPropagation(); hideTip(); ANN.toggle(n.k, n.mc, e); });
+                const annotated = ANN.has(n.k, n.mc);
+                if (CAP_H && annotated) {
+                    // at most the column pitch, ~220 px, and never past either
+                    // edge of the plot (a wide sweep of few k has wide columns)
+                    const capW = Math.min(STEP * 0.95, 220, 2 * (n.x - 2), 2 * (iw - n.x + m.r - 4));
+                    const cap = __twoPartCaption(content, n.x, n.top + n.h + 12, `${COMP}${n.mc}`,
+                        ANN.headline(n.k, n.mc), capW, capFill);
+                    wireComp(cap.comp); wireAnn(cap.ann);
+                } else if (CAP_H) wireComp(content.append("text").attr("x", n.x).attr("y", n.top + n.h + 12)
+                    .attr("text-anchor", "middle").style("font-size", "12px").style("font-weight", "bold")
+                    .style("fill", capFill).text(`${COMP}${n.mc}`));
+                else if (n.h >= 9) {
+                    const t = content.append("text").attr("x", n.x).attr("y", n.top + n.h / 2 + 3)
+                        .attr("text-anchor", "middle").style("font-size", "9px").style("font-weight", "bold")
+                        .style("fill", "#fff").style("stroke", "rgba(0,0,0,.55)").style("stroke-width", "2px")
+                        .style("paint-order", "stroke").style("pointer-events", "none").text(n.mc);
+                    // no room for a caption: the in-bar id opens the annotations
+                    // (shift-click a band still selects the whole node)
+                    if (annotated) wireAnn(t);
+                }
             });
         }
 
         draw();
-        svg.on("click", () => { let changed = false;
+        svg.on("click", () => { let changed = false; ANN.hide();
             if (sel != null) { sel = null; pushSelection(); changed = true; }
             if (focusK != null) { focusK = null; changed = true; }
             if (changed) draw(); });
@@ -1337,6 +1442,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
         const theta = data.theta || {};
         const CL = ((data.clusters || {}).sample_to_cluster) || {};
         const META = model.get("metadata") || {};
+        const COMP = model.get("component_label") || "LC";  // what a component is called
         const GRAD = model.get("gradient") || "";
         const SINGLE = GRAD !== "";
         const SPREAD = Math.max(0, Math.min(1, +model.get("gradient_spread") || 0));
@@ -1624,8 +1730,8 @@ class StripeSankeyInline(anywidget.AnyWidget):
                     gg.append("path").attr("d", __ribbonPath(x0, f.so.y0, f.so.y1, x1, f.to.y0, f.to.y1))
                         .attr("fill", P.colorOf(f.g)).attr("opacity", base).style("cursor", "pointer")
                         .attr("stroke", (SINGLE && P.isCl) ? "#fff" : "none").attr("stroke-width", (SINGLE && P.isCl) ? 0.7 : 0)
-                        .on("mousemove", e => showTip(`K${f.ka} LC${f.a} \\u2192 K${f.kb} LC${f.b}`
-                            + `<br><b>${lab}</b> \\u00b7 ${f.count} samples`
+                        .on("mousemove", e => showTip(`K${f.ka} ${COMP}${f.a} \u2192 K${f.kb} ${COMP}${f.b}`
+                            + `<br><b>${lab}</b> \u00b7 ${f.count} samples`
                             + (hit ? `<br><b>traced here: ${hit}</b>` : "") + comp(f.sids), e))
                         .on("mouseleave", hideTip)
                         .on("mouseover", function () { d3.select(this).attr("opacity", Math.max(base, 0.75)); })
@@ -1659,7 +1765,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
                             .attr("stroke-dasharray", (isNoise && SINGLE) ? "3,2" : null)
                             .attr("opacity", active ? (hit ? 0.32 : 0.12) : 1)
                             .style("cursor", "pointer")
-                            .on("mousemove", e => showTip(`<b>K${n.k} LC${n.mc}</b> \\u00b7 ${n.total} samples`
+                            .on("mousemove", e => showTip(`<b>K${n.k} ${COMP}${n.mc}</b> \u00b7 ${n.total} samples`
                                 + `<br>${lab}: ${s.sids.length} (${Math.round(s.sids.length / n.total * 100)}%)`
                                 + (hit ? `<br><b>traced here: ${hit}</b>` : "") + comp(s.sids), e))
                             .on("mouseleave", hideTip)
@@ -1682,12 +1788,12 @@ class StripeSankeyInline(anywidget.AnyWidget):
                     if (CAP_H) gg.append("text").attr("x", x).attr("y", n.top + n.h + 11)
                         .attr("text-anchor", "middle").style("font-size", "10px").style("font-weight", "bold")
                         .style("fill", capFill).style("cursor", "pointer")
-                        .on("mousemove", e => showTip(`<b>K${n.k} LC${n.mc}</b> \\u00b7 ${n.total} samples`
+                        .on("mousemove", e => showTip(`<b>K${n.k} ${COMP}${n.mc}</b> \u00b7 ${n.total} samples`
                             + `<br><span style="opacity:.7">click to select the whole node</span>`
                             + comp(n.samples), e))
                         .on("mouseleave", hideTip)
                         .on("click", function (e) { e.stopPropagation(); hideTip(); selectWholeNode(n); })
-                        .text(`LC${n.mc}`);
+                        .text(`${COMP}${n.mc}`);
                     else if (n.h >= 9) gg.append("text").attr("x", x).attr("y", n.top + n.h / 2 + 3)
                         .attr("text-anchor", "middle").style("font-size", "9px").style("font-weight", "bold")
                         .style("fill", "#fff").style("stroke", "rgba(0,0,0,.55)").style("stroke-width", "2px")
@@ -1731,13 +1837,13 @@ class StripeSankeyInline(anywidget.AnyWidget):
             // clipped: the widest variant the room allows, at ~5.6 px per
             // character, and nothing at all below that.
             const head = `${SAMPLES.length} samples, all of them`;
-            const tail = sel ? `${sel.set.size} traced \\u2014 click again or click empty space to clear`
+            const tail = sel ? `${sel.set.size} traced \u2014 click again or click empty space to clear`
                              : "click a band, a ribbon or a legend swatch to trace those samples; "
-                               + "click an \\u201cMCn\\u201d caption (or shift-click a band) for the whole node";
+                               + "click an \u201cMCn\u201d caption (or shift-click a band) for the whole node";
             const room = width - 2 * MX - (dropped.length ? 160 : 0);
             void NROWS;   // (grid shape is already baked into every panel's y0)
-            const cands = [`${head} \\u00b7 identical node layout in every panel \\u00b7 ${tail}`,
-                           `${head} \\u00b7 identical node layout in every panel`,
+            const cands = [`${head} \u00b7 identical node layout in every panel \u00b7 ${tail}`,
+                           `${head} \u00b7 identical node layout in every panel`,
                            head];
             const cap = cands.find(c => c.length * 5.6 <= room);
             if (cap) gRoot.append("text").attr("x", MX).attr("y", height - 4)
@@ -1771,7 +1877,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
         g.append("text").attr("x", 0).attr("y", 31).style("font-size", "11px").style("fill", "#888").text(subtitle || "across all candidate models");
         // right-aligned hint, skipped on narrow panels where it would collide
         if (onPick && W > 430) g.append("text").attr("x", W).attr("y", 16).attr("text-anchor", "end").style("font-size", "11px").style("fill", "#888")
-            .text(sel != null ? `cluster ${sel} highlighted \\u00b7 click C${sel} again to clear` : "click a cluster chip to highlight it");
+            .text(sel != null ? `cluster ${sel} highlighted \u00b7 click C${sel} again to clear` : "click a cluster chip to highlight it");
         const pad = 26, colW = (W - 2 * pad) / Math.max(1, n);
         const xLeafPos = i => pad + (i + 0.5) * colW;
         const chipY = H - 28, treeBot = chipY - 8, treeTop = 42;
@@ -1929,7 +2035,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
         });
         if (nShow < cats.length)
             leg.append("text").attr("x", 0).attr("y", y).style("font-size", "10px")
-                .style("fill", "#888").text(`\\u2026 +${cats.length - nShow} more`);
+                .style("fill", "#888").text(`\u2026 +${cats.length - nShow} more`);
         if (footer) leg.append("text").attr("x", 0).attr("y", H - 4).style("font-size", "10px")
             .style("fill", "#888").text(footer);
     }
@@ -1949,8 +2055,9 @@ class StripeSankeyInline(anywidget.AnyWidget):
     //     samples confident in EVERY shown K, so node heights were a subset's
     //     and could not line up with cluster_prox's full census.
     //   * the per-LC top-taxa panel is gone. It needed a feature x annotation
-    //     table, which is domain knowledge this package does not hold -- see
-    //     API_stripesankey.md, "Still open". The caption now selects the node.
+    //     table, which is domain knowledge this package does not hold. Its
+    //     replacement is generic: a caller passes `lc_annotations` and the
+    //     caption gets a second, annotation part (see __annotations).
     // Needs sankey_data.theta + metadata_df + hover_field. sankey_data.clusters
     // is optional, and used only to order the columns and the category stack
     // the way cluster_prox orders them.
@@ -1963,10 +2070,10 @@ class StripeSankeyInline(anywidget.AnyWidget):
         const theta = data.theta || {};
         const CL = ((data.clusters || {}).sample_to_cluster) || {};
         const META = model.get("metadata") || {};
-        // {"<k>": {"<mc>": [[taxon, prob], ...]}} -- top taxa panel (may be empty)
         const _hf = model.get("hover_field");
         const HFIELDS = (Array.isArray(_hf) ? _hf : (_hf ? [_hf] : [])).map(String).filter(Boolean).slice(0, 3);
         const FIELD = HFIELDS[0] || "";
+        const COMP = model.get("component_label") || "LC";  // what a component is called
         // Colour traits, read only so the lineage call below is identical to
         // cluster_prox's. Nothing here is painted with a lineage colour -- but
         // `__clusterLineage` takes them, and making the call identical is the
@@ -2091,6 +2198,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
             .style("background", "#111").style("color", "#fff").style("padding", "9px 13px").style("border-radius", "7px").style("font", "15px sans-serif").style("z-index", 10);
         const showTip = (html, e) => { tt.html(html).style("opacity", 1); __placeFloat(tt.node(), e, width, height); };
         const hideTip = () => tt.style("opacity", 0);
+        const ANN = __annotations(el, model, width, height);   // caller-supplied annotations
         function metaComp(sids) {
             if (!HFIELDS.length || !sids || !sids.length) return "";
             let out = "";
@@ -2192,8 +2300,8 @@ class StripeSankeyInline(anywidget.AnyWidget):
                 fg.append("path").attr("d", ribbon(x0, f.so.y0, f.so.y1, x1, f.to.y0, f.to.y1))
                     .attr("fill", fieldColor(FIELD, f.g)).attr("opacity", base)
                     .attr("stroke", "none").style("cursor", "pointer")
-                    .on("mousemove", e => showTip(`K${f.ka} LC${f.a} \\u2192 K${f.kb} LC${f.b}`
-                        + `<br><b>${FIELD}: ${f.g}</b> \\u00b7 ${f.count} samples`
+                    .on("mousemove", e => showTip(`K${f.ka} ${COMP}${f.a} \u2192 K${f.kb} ${COMP}${f.b}`
+                        + `<br><b>${FIELD}: ${f.g}</b> \u00b7 ${f.count} samples`
                         + (hit ? `<br><b>traced here: ${hit}</b>` : "") + metaComp(f.sids), e))
                     .on("mouseleave", hideTip)
                     .on("mouseover", function () { d3.select(this).attr("opacity", Math.max(base, 0.75)); })
@@ -2241,7 +2349,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
                         .attr("fill", fieldColor(FIELD, s.group))
                         .attr("stroke", "#fff").attr("stroke-width", 0.5)
                         .attr("opacity", op).style("cursor", "pointer")
-                        .on("mousemove", e => showTip(`<b>K${n.k} LC${n.mc}</b> \\u00b7 ${n.total} samples`
+                        .on("mousemove", e => showTip(`<b>K${n.k} ${COMP}${n.mc}</b> \u00b7 ${n.total} samples`
                             + `<br>${FIELD}: <b>${s.group}</b> ${s.sids.length}`
                             + ` (${Math.round(s.sids.length / n.total * 100)}%)`
                             + (hit ? `<br><b>traced here: ${hit}</b>` : "") + metaComp(s.sids), e))
@@ -2265,24 +2373,40 @@ class StripeSankeyInline(anywidget.AnyWidget):
                 // Caption UNDER the node, cluster_prox's "LCn"; when
                 // the gap cannot hold one the id goes inside the bar instead.
                 // Clicking it selects the whole node -- the node body is already
-                // spoken for, each band there selecting its own category.
+                // spoken for, each band there selecting its own category. With
+                // annotations it has a second part, which opens them (as in
+                // cluster_prox).
                 const dimTxt = active && !rel;
-                let cap = null;
-                if (CAP_H) cap = content.append("text").attr("x", n.x).attr("y", n.top + n.h + 12)
-                    .attr("text-anchor", "middle").style("font-size", "12px").style("font-weight", "bold")
-                    .style("fill", dimTxt ? "#bbb" : "#333").text(`LC${n.mc}`);
-                else if (n.h >= 9) cap = content.append("text").attr("x", n.x).attr("y", n.top + n.h / 2 + 3)
-                    .attr("text-anchor", "middle").style("font-size", "9px").style("font-weight", "bold")
-                    .style("fill", "#fff").style("stroke", "rgba(0,0,0,.55)").style("stroke-width", "2px")
-                    .style("paint-order", "stroke").attr("opacity", dimTxt ? 0.35 : 1).text(n.mc);
-                if (!cap) return;
-                cap.style("cursor", "pointer")
-                    .on("mousemove", e => showTip(`<b>K${n.k} LC${n.mc}</b> \\u00b7 ${n.total} samples`
+                const wireComp = s => s.style("cursor", "pointer")
+                    .on("mousemove", e => showTip(`<b>K${n.k} ${COMP}${n.mc}</b> \u00b7 ${n.total} samples`
                         + `<br><span style="opacity:.7">click to select the whole node</span>`
                         + metaComp(n.samples), e))
                     .on("mouseleave", hideTip)
                     .on("click", function (e) { e.stopPropagation(); hideTip();
                         selectWholeNode(n); });
+                const wireAnn = s => s.style("cursor", "pointer")
+                    .on("mousemove", e => showTip(ANN.tip(n.k, n.mc), e))
+                    .on("mouseleave", hideTip)
+                    .on("click", function (e) { e.stopPropagation(); hideTip(); ANN.toggle(n.k, n.mc, e); });
+                const annotated = ANN.has(n.k, n.mc);
+                if (CAP_H && annotated) {
+                    const capW = Math.min(STEP * 0.95, 220, 2 * (n.x - 2), 2 * (iw - n.x + m.r - 4));
+                    const cap = __twoPartCaption(content, n.x, n.top + n.h + 12, `${COMP}${n.mc}`,
+                        ANN.headline(n.k, n.mc), capW, dimTxt ? "#bbb" : "#333");
+                    wireComp(cap.comp); wireAnn(cap.ann);
+                } else if (CAP_H) wireComp(content.append("text").attr("x", n.x).attr("y", n.top + n.h + 12)
+                    .attr("text-anchor", "middle").style("font-size", "12px").style("font-weight", "bold")
+                    .style("fill", dimTxt ? "#bbb" : "#333").text(`${COMP}${n.mc}`));
+                else if (n.h >= 9) {
+                    const t = content.append("text").attr("x", n.x).attr("y", n.top + n.h / 2 + 3)
+                        .attr("text-anchor", "middle").style("font-size", "9px").style("font-weight", "bold")
+                        .style("fill", "#fff").style("stroke", "rgba(0,0,0,.55)").style("stroke-width", "2px")
+                        .style("paint-order", "stroke").attr("opacity", dimTxt ? 0.35 : 1).text(n.mc);
+                    // no room for a caption: with annotations the in-bar id opens
+                    // them (shift-click a band for the whole node); without, it
+                    // selects the whole node as before
+                    if (annotated) wireAnn(t); else wireComp(t);
+                }
             });
 
             // ---- the metadata key, redrawn with the diagram so a traced
@@ -2296,7 +2420,7 @@ class StripeSankeyInline(anywidget.AnyWidget):
         }
         draw();
         syncBar();
-        svg.on("click", () => { if (sel) { sel = null; pushSelection(null); syncBar(); draw(); } });
+        svg.on("click", () => { ANN.hide(); if (sel) { sel = null; pushSelection(null); syncBar(); draw(); } });
 
         // ---- K labels (top) --------------------------------------------------
         kList.forEach(k => topG.append("text").attr("x", m.l + colX(String(k))).attr("y", 20)
@@ -4434,6 +4558,22 @@ class StripeSankeyInline(anywidget.AnyWidget):
     metadata = traitlets.Dict(default_value={}).tag(sync=True)
     hover_field = traitlets.Union([traitlets.List(), traitlets.Unicode()],
                                   default_value="").tag(sync=True)
+
+    # Per-component annotations, supplied by the caller (cluster_prox and
+    # meta_sankey): {"<k>": {"<lc>": [[label, weight], ...]}}, best first. The
+    # widget shows exactly these rows and never reads a feature table -- what
+    # they are and which ones are left out is the caller's decision. A component
+    # with rows gets a two-part caption "LC3 · Prevotella" (the top row's name):
+    # clicking the component part selects the whole node (as without
+    # annotations), clicking the annotation part opens a popup listing the rows
+    # and selects nothing. Empty (default) = captions exactly as before.
+    lc_annotations = traitlets.Dict(default_value={}).tag(sync=True)
+    # What the annotations are ("Genus", "gene", ...): named in the annotation
+    # part's tooltip and the popup heading ("top 5 Genus"), not in the caption.
+    annotation_label = traitlets.Unicode(default_value="").tag(sync=True)
+    # What a component is called in captions and tooltips. "LC" (latent
+    # component) by default; a domain package can say e.g. "MC".
+    component_label = traitlets.Unicode(default_value="LC").tag(sync=True)
 
     # Which panels a color_mode='small_multiples' figure draws, left to right:
     # 'cluster' (consensus cluster, the stripesankey's OKLCH lineage) and/or
